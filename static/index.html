@@ -60,6 +60,11 @@
           <span class="text-[9px] font-extrabold mt-0.5">Images</span>
         </button>
 
+        <button onclick="switchLeonardoTab('face')" id="nav-face-btn" title="1-Click AI Face Cleaner & HD Restore" class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-pink-600 hover:bg-pink-50">
+          <i data-lucide="sparkles" class="w-5 h-5 text-pink-500"></i>
+          <span class="text-[9px] font-bold mt-0.5">Clean</span>
+        </button>
+
         <button onclick="switchLeonardoTab('video')" id="nav-video-btn" title="Motion 2.0 (Video Generation)" class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-slate-900 hover:bg-slate-100">
           <i data-lucide="film" class="w-5 h-5 text-cyan-500"></i>
           <span class="text-[9px] font-bold mt-0.5">Motion</span>
@@ -235,7 +240,7 @@
   <main class="flex-1 min-w-0 min-h-screen flex flex-col bg-transparent relative pb-24 md:pb-8">
 
     <!-- FLOATING TOP COMMAND CENTER (PROMPT & MODEL BAR) -->
-    <div class="luminous-prompt-bar p-3 sm:p-4 z-10 sticky top-0">
+    <div id="prompt-top-bar" class="luminous-prompt-bar p-3 sm:p-4 z-10 sticky top-0">
       
       <!-- Mobile Top Bar (< md screens) -->
       <div class="flex md:hidden items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200/80">
@@ -385,6 +390,207 @@
         <h3 class="font-display font-black text-xl text-slate-900 mb-2">No Generations Yet</h3>
         <p class="text-xs text-slate-500 max-w-sm mb-6 font-medium">Type an imaginative prompt in the top bar or click "Surprise Me" to create your first artwork.</p>
         <button onclick="randomPrompt(); startGeneration();" class="btn-luminous-generate px-6 py-2.5 rounded-xl font-bold text-xs text-white">Generate Sample</button>
+      </div>
+
+    </div>
+
+    <!-- DEDICATED 1-CLICK AI FACE CLEANER & NEURAL RESTORER PANEL -->
+    <div id="face-restore-panel" class="hidden flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+      
+      <!-- Back to Generator Breadcrumb -->
+      <div class="mb-4">
+        <button onclick="switchLeonardoTab('image')" class="inline-flex items-center space-x-1.5 text-xs font-bold text-purple-600 hover:text-purple-800 transition">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <span>Back to Image Studio Generator</span>
+        </button>
+      </div>
+
+      <!-- Panel Header Banner -->
+      <div class="mb-6 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white relative overflow-hidden shadow-2xl border border-purple-500/30">
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-10 -top-10 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div class="relative z-10">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-pink-500/20 border border-pink-400/30 text-pink-300 text-xs font-bold mb-3">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>1-Click Neural AI Face Restoration & Brightening</span>
+          </div>
+          <h2 class="font-display font-black text-2xl sm:text-3xl text-white tracking-tight mb-2">
+            Clear Blurry Pixels & Dark Faces Instantly
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+            Upload any low-resolution, pixelated, blurry, or dark/shadowed photo. Belzora's CodeFormer neural model reconstructs facial anatomy (eyes, pupils, skin texture, lips) and auto-brightens dark faces to 2048px Ultra HD in just 1 click.
+          </p>
+        </div>
+      </div>
+
+      <!-- Main Interactive Box -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-xl p-5 sm:p-8 mb-6">
+        
+        <!-- Dropzone / Upload Box (Visible when no image selected) -->
+        <div id="face-upload-zone" onclick="document.getElementById('face-file-input').click()" 
+             ondragover="handleFaceDragOver(event)" ondragleave="handleFaceDragLeave(event)" ondrop="handleFaceDrop(event)"
+             class="border-2 border-dashed border-purple-300 hover:border-pink-500 rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-300 bg-purple-50/40 hover:bg-pink-50/40 group">
+          <input type="file" id="face-file-input" accept="image/*" class="hidden" onchange="handleFacePhotoSelect(event)">
+          
+          <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-3xl bg-white shadow-md border border-purple-200 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform mb-4">
+            <i data-lucide="upload-cloud" class="w-8 h-8 sm:w-10 sm:h-10 text-pink-500"></i>
+          </div>
+          
+          <h3 class="font-display font-black text-lg sm:text-xl text-slate-900 mb-1">
+            Click to Upload or Drag & Drop Face Photo
+          </h3>
+          <p class="text-xs text-slate-500 mb-4 max-w-md mx-auto">
+            Koi bhi blurry, pixelated ya dark photo ko yahan upload karein (JPG, PNG, WEBP up to 25MB)
+          </p>
+          
+          <div class="inline-flex items-center space-x-2 text-xs font-bold text-purple-600 bg-purple-100/70 px-4 py-2 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition">
+            <i data-lucide="image" class="w-4 h-4"></i>
+            <span>Browse Photo From Device</span>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-purple-100 flex items-center justify-center">
+            <button type="button" onclick="loadSampleFacePhoto(event)" class="text-xs font-bold text-pink-600 hover:text-pink-700 underline flex items-center space-x-1.5 cursor-pointer">
+              <i data-lucide="sparkle" class="w-3.5 h-3.5"></i>
+              <span>Or click here to test with a Dark & Blurry Sample Photo</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview & Enhancement View (Visible when image is selected) -->
+        <div id="face-preview-section" class="hidden">
+          
+          <!-- Quick Control Options -->
+          <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-6">
+            <label class="flex items-center space-x-3 cursor-pointer select-none">
+              <input type="checkbox" id="face-auto-brighten" checked class="w-4 h-4 text-pink-600 rounded accent-pink-600 cursor-pointer">
+              <div class="text-xs">
+                <span class="font-extrabold text-slate-800">Auto-Brighten Dark Face & Shadows</span>
+                <p class="text-slate-500 text-[11px]">Automatically detects dark faces & boosts luminance + warm skin glow</p>
+              </div>
+            </label>
+            
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold text-slate-600">Resolution:</span>
+              <span class="px-2.5 py-1 rounded-xl bg-purple-100 text-purple-700 font-extrabold text-xs">2048px Ultra HD</span>
+            </div>
+          </div>
+
+          <!-- Side-by-Side Comparison Container -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <!-- Left: Original Image -->
+            <div class="flex flex-col">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                  <span>Original Photo (Input)</span>
+                </span>
+                <button onclick="resetFaceRestore()" class="text-xs font-bold text-rose-500 hover:text-rose-700 transition cursor-pointer">
+                  Change Photo
+                </button>
+              </div>
+              <div class="relative rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center min-h-[300px] max-h-[450px]">
+                <img id="face-original-img" src="" alt="Original Photo" class="w-full h-full object-contain max-h-[450px]">
+              </div>
+            </div>
+
+            <!-- Right: Cleaned & Restored Result or Progress State -->
+            <div class="flex flex-col">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-black uppercase tracking-wider text-pink-600 flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-pink-500 animate-ping"></span>
+                  <span>Belzora AI Restored (Crystal HD)</span>
+                </span>
+                <span id="face-status-badge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  Ready to Clean
+                </span>
+              </div>
+              
+              <div id="face-result-box" class="relative rounded-2xl overflow-hidden border-2 border-pink-200 bg-slate-100 flex items-center justify-center min-h-[300px] max-h-[450px]">
+                
+                <!-- Placeholder / Initial State before clicking Clean -->
+                <div id="face-result-placeholder" class="flex flex-col items-center justify-center text-center p-6">
+                  <div class="w-16 h-16 rounded-2xl bg-pink-50 text-pink-500 flex items-center justify-center mb-3">
+                    <i data-lucide="wand-2" class="w-8 h-8"></i>
+                  </div>
+                  <h4 class="font-display font-black text-slate-800 text-sm mb-1">Click the button below</h4>
+                  <p class="text-xs text-slate-500 max-w-xs">AI will reconstruct pixel details, sharpen blurry eyes, and brighten dark areas.</p>
+                </div>
+
+                <!-- Processing Scanner View -->
+                <div id="face-processing-view" class="hidden absolute inset-0 bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white z-20">
+                  <div class="relative w-20 h-20 rounded-3xl bg-pink-500/20 border border-pink-400/40 flex items-center justify-center mb-4">
+                    <i data-lucide="sparkles" class="w-10 h-10 text-pink-400 animate-spin" style="animation-duration: 4s;"></i>
+                  </div>
+                  <h4 id="face-process-title" class="font-display font-black text-lg text-white mb-1">Reconstructing Facial Landmarks...</h4>
+                  <p id="face-process-sub" class="text-xs text-slate-300 max-w-xs mb-4">Cleaning pixel noise, sharpening eye pupils, teeth, and skin texture...</p>
+                  <div class="w-64 h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div id="face-process-bar" class="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 rounded-full w-1/3 transition-all duration-300"></div>
+                  </div>
+                </div>
+
+                <!-- Restored Image Preview -->
+                <img id="face-restored-img" src="" alt="Restored Photo" class="hidden w-full h-full object-contain max-h-[450px]">
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
+            <button onclick="resetFaceRestore()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 font-bold text-xs transition cursor-pointer">
+              Upload Another Photo
+            </button>
+            
+            <div class="flex items-center space-x-3 w-full sm:w-auto">
+              <button id="face-clean-btn" onclick="executeFaceRestore()" class="btn-luminous-generate flex-1 sm:flex-initial px-8 py-3 rounded-2xl font-display font-black text-sm text-white flex items-center justify-center space-x-2 shadow-lg shadow-pink-500/25 cursor-pointer">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span id="face-clean-btn-text">✨ Clean & Restore Face Now (1-Click)</span>
+              </button>
+              
+              <button id="face-download-btn" onclick="downloadRestoredFace()" class="hidden px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-display font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/25 transition cursor-pointer">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Download 2048px HD</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Feature Highlights Bento row -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-start space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="eye" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-display font-extrabold text-xs text-slate-900 mb-0.5">Eyes & Pupils Restored</h4>
+            <p class="text-[11px] text-slate-500">Fixes blurry eye shapes, iris reflections, and eyelashes with neural precision.</p>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-start space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="sun" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-display font-extrabold text-xs text-slate-900 mb-0.5">Dark Shadows Lightened</h4>
+            <p class="text-[11px] text-slate-500">Auto-luminance balances dark face shadows, bringing natural warm clarity.</p>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-start space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="maximize-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-display font-extrabold text-xs text-slate-900 mb-0.5">2048px Super-Res</h4>
+            <p class="text-[11px] text-slate-500">Upscales pixelated images 2x-4x with no blurriness, ready for crystal-clear printing.</p>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -548,9 +754,13 @@
       <i data-lucide="home" class="w-5 h-5"></i>
       <span class="text-[10px] font-bold mt-0.5">Home</span>
     </a>
-    <button onclick="switchLeonardoTab('image')" class="flex flex-col items-center text-purple-600 transition">
+    <button onclick="switchLeonardoTab('image')" id="mobile-nav-image-btn" class="flex flex-col items-center text-purple-600 transition">
       <i data-lucide="image" class="w-5 h-5 text-purple-600"></i>
       <span class="text-[10px] font-extrabold mt-0.5">Studio</span>
+    </button>
+    <button onclick="switchLeonardoTab('face')" id="mobile-nav-face-btn" class="flex flex-col items-center text-slate-600 hover:text-pink-600 transition">
+      <i data-lucide="sparkles" class="w-5 h-5 text-pink-500"></i>
+      <span class="text-[10px] font-bold mt-0.5">Clean</span>
     </button>
     <button onclick="toggleMobileSettings()" class="flex flex-col items-center text-slate-600 hover:text-purple-600 transition">
       <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
@@ -562,7 +772,7 @@
     </button>
   </nav>
 
-  <script src="/static/js/app.js?v=26.0"></script>
+  <script src="/static/js/app.js?v=28.0"></script>
   <script>
     function toggleMobileSettings() {
       const rail = document.getElementById('leo-settings-rail');
