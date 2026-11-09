@@ -99,8 +99,45 @@
             <i data-lucide="log-out" class="w-4 h-4"></i>
           </button>
         </div>
+
+        <!-- Mobile Hamburger Menu Button (md:hidden) -->
+        <button id="mobile-menu-btn" onclick="toggleMobileNav()" class="md:hidden p-2 rounded-xl text-slate-700 hover:text-purple-600 hover:bg-purple-50 transition border border-slate-200 ml-1 cursor-pointer" title="Navigation Menu">
+          <i id="mobile-menu-icon" data-lucide="menu" class="w-5 h-5"></i>
+        </button>
       </div>
 
+    </div>
+
+    <!-- Mobile Dropdown Navigation Drawer (Shows Features, Showcase, Models, Tokens & Pricing, FAQ on Mobile) -->
+    <div id="mobile-nav-drawer" class="hidden md:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-200/80 shadow-2xl px-4 py-3 space-y-2">
+      <nav class="flex flex-col space-y-1">
+        <a href="#features" onclick="toggleMobileNav()" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold text-sm transition">
+          <i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i>
+          <span>Features</span>
+        </a>
+        <a href="#showcase" onclick="toggleMobileNav()" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-pink-50 text-slate-700 hover:text-pink-700 font-bold text-sm transition">
+          <i data-lucide="image" class="w-4 h-4 text-pink-600"></i>
+          <span>Showcase Gallery</span>
+        </a>
+        <a href="#models" onclick="toggleMobileNav()" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 font-bold text-sm transition">
+          <i data-lucide="cpu" class="w-4 h-4 text-cyan-600"></i>
+          <span>Models (FLUX & SDXL)</span>
+        </a>
+        <a href="#pricing" onclick="toggleMobileNav()" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 text-slate-700 hover:text-amber-700 font-bold text-sm transition">
+          <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+          <span>Tokens & Pricing</span>
+        </a>
+        <a href="#faq" onclick="toggleMobileNav()" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold text-sm transition">
+          <i data-lucide="help-circle" class="w-4 h-4 text-slate-500"></i>
+          <span>FAQ</span>
+        </a>
+      </nav>
+      <div class="pt-2 border-t border-slate-100">
+        <a href="/studio" class="btn-luminous-generate w-full py-2.5 px-4 rounded-xl text-xs font-black shadow-md flex items-center justify-center space-x-2">
+          <i data-lucide="rocket" class="w-4 h-4"></i>
+          <span>Launch Creative Studio</span>
+        </a>
+      </div>
     </div>
   </header>
 
@@ -1258,6 +1295,19 @@
 
   <!-- CLIENT SCRIPT -->
   <script>
+    function toggleMobileNav() {
+      const drawer = document.getElementById('mobile-nav-drawer');
+      const icon = document.getElementById('mobile-menu-icon');
+      if (drawer) {
+        drawer.classList.toggle('hidden');
+        const isHidden = drawer.classList.contains('hidden');
+        if (icon) {
+          icon.setAttribute('data-lucide', isHidden ? 'menu' : 'x');
+          if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+        }
+      }
+    }
+
     let selectedAvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Awais";
 
     const HERO_SAMPLES = [
