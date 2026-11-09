@@ -29,15 +29,18 @@
     }
   </script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex font-sans selection:bg-pink-500 selection:text-white relative">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col md:flex-row font-sans selection:bg-pink-500 selection:text-white relative overflow-x-hidden">
+
+  <!-- Mobile Settings Backdrop -->
+  <div id="mobile-settings-backdrop" onclick="toggleMobileSettings()"></div>
 
   <!-- RADIANT MULTI-COLOR AMBIENT MESH (NO BLACK) -->
   <div class="luminous-mesh"></div>
   <div class="orb-glow-1"></div>
   <div class="orb-glow-2"></div>
 
-  <!-- 1. LEFT ICON NAVIGATION BAR -->
-  <aside class="luminous-sidebar w-16 md:w-20 flex-shrink-0 flex flex-col items-center justify-between py-4 border-r border-slate-200 sticky top-0 h-screen z-30 shadow-sm">
+  <!-- 1. LEFT ICON NAVIGATION BAR (Desktop Only) -->
+  <aside class="hidden md:flex luminous-sidebar w-16 md:w-20 flex-shrink-0 flex-col items-center justify-between py-4 border-r border-slate-200 sticky top-0 h-screen z-30 shadow-sm">
     <!-- Top: Logo & Navigation Icons -->
     <div class="flex flex-col items-center space-y-6 w-full">
       <!-- Belzora AI Official Logo -->
@@ -99,14 +102,19 @@
     </div>
   </aside>
 
-  <!-- 2. LEFT SETTINGS CONFIGURATION RAIL (LEONARDO CONTROLS) -->
+  <!-- 2. LEFT SETTINGS CONFIGURATION RAIL (Desktop static, Mobile slide-over drawer) -->
   <aside id="leo-settings-rail" class="luminous-rail w-72 md:w-80 flex-shrink-0 flex flex-col sticky top-0 h-screen border-r border-slate-200 overflow-y-auto z-20 shadow-sm">
     <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-white/70">
       <div class="flex items-center space-x-2">
         <span class="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse"></span>
         <h2 id="rail-title" class="font-display font-black text-sm text-slate-900 uppercase tracking-wider">Image Settings</h2>
       </div>
-      <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">BELZORA PRO</span>
+      <div class="flex items-center space-x-2">
+        <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">BELZORA PRO</span>
+        <button onclick="toggleMobileSettings()" class="lg:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition" title="Close Settings">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
     </div>
 
     <div class="p-4 space-y-5 flex-1">
@@ -224,37 +232,55 @@
   </aside>
 
   <!-- 3. MAIN WORKSPACE & GENERATIONS FEED -->
-  <main class="flex-1 min-w-0 min-h-screen flex flex-col bg-transparent relative">
+  <main class="flex-1 min-w-0 min-h-screen flex flex-col bg-transparent relative pb-24 md:pb-8">
 
     <!-- FLOATING TOP COMMAND CENTER (PROMPT & MODEL BAR) -->
-    <div class="luminous-prompt-bar p-4 z-10 sticky top-0">
+    <div class="luminous-prompt-bar p-3 sm:p-4 z-10 sticky top-0">
       
+      <!-- Mobile Top Bar (< md screens) -->
+      <div class="flex md:hidden items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200/80">
+        <a href="/" class="flex items-center space-x-2">
+          <img src="/static/images/belzora-icon.svg" alt="Belzora" class="w-7 h-7 object-contain">
+          <span class="font-display font-black text-lg text-slate-900">Belzora<span class="text-pink-500"> AI</span></span>
+        </a>
+        <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-1 bg-amber-50 border border-amber-200 px-2 py-1 rounded-xl text-[11px] font-black text-amber-700">
+            <i data-lucide="zap" class="w-3 h-3 fill-amber-500 text-amber-500"></i>
+            <span id="mobile-token-count">PRO</span>
+          </div>
+          <button onclick="toggleMobileSettings()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition">
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+            <span>Settings</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Top Row: Prompt Box & Action Buttons -->
-      <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+      <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2.5 sm:gap-3">
         
         <!-- Prompt Box -->
-        <div class="flex-1 relative flex items-center bg-white rounded-2xl border-2 border-slate-200 focus-within:border-purple-500 transition px-4 py-2 shadow-sm">
-          <i data-lucide="sparkles" class="w-5 h-5 text-purple-600 mr-3 flex-shrink-0"></i>
-          <input type="text" id="prompt-input" placeholder="Type a prompt (e.g. A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, 8k, photoreal)..." class="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium">
+        <div class="flex-1 relative flex items-center bg-white rounded-2xl border-2 border-slate-200 focus-within:border-purple-500 transition px-3 sm:px-4 py-2 shadow-sm">
+          <i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mr-2 sm:mr-3 flex-shrink-0"></i>
+          <input type="text" id="prompt-input" placeholder="Type a prompt (e.g. Cyberpunk tiger in neon bamboo forest, 8k)..." class="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium">
           
-          <div class="flex items-center space-x-1.5 ml-2">
+          <div class="flex items-center space-x-1 sm:space-x-1.5 ml-1 sm:ml-2">
             <!-- Magic Prompt / AI Enhance -->
-            <button onclick="enhanceCurrentPrompt()" id="enhance-btn" title="Enhance with Prompt Magic" class="p-2 rounded-xl text-cyan-600 hover:bg-cyan-50 transition border border-cyan-200">
-              <i data-lucide="wand-2" class="w-4 h-4"></i>
+            <button onclick="enhanceCurrentPrompt()" id="enhance-btn" title="Enhance with Prompt Magic" class="p-1.5 sm:p-2 rounded-xl text-cyan-600 hover:bg-cyan-50 transition border border-cyan-200">
+              <i data-lucide="wand-2" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             </button>
             <!-- Random Dice -->
-            <button onclick="randomPrompt()" title="Surprise Me (Random Prompt)" class="p-2 rounded-xl text-amber-600 hover:bg-amber-50 transition border border-amber-200">
-              <i data-lucide="dices" class="w-4 h-4"></i>
+            <button onclick="randomPrompt()" title="Surprise Me (Random Prompt)" class="p-1.5 sm:p-2 rounded-xl text-amber-600 hover:bg-amber-50 transition border border-amber-200">
+              <i data-lucide="dices" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             </button>
             <!-- Clear -->
-            <button onclick="clearPrompt()" title="Clear Prompt" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 transition">
-              <i data-lucide="x" class="w-4 h-4"></i>
+            <button onclick="clearPrompt()" title="Clear Prompt" class="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-rose-600 transition">
+              <i data-lucide="x" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             </button>
           </div>
         </div>
 
         <!-- Big Luminous Generate Button -->
-        <button id="generate-btn" onclick="startGeneration()" class="btn-luminous-generate px-8 py-3 rounded-2xl font-display font-extrabold text-sm tracking-wide flex items-center justify-center space-x-3 flex-shrink-0 cursor-pointer">
+        <button id="generate-btn" onclick="startGeneration()" class="btn-luminous-generate w-full md:w-auto px-6 sm:px-8 py-3 rounded-2xl font-display font-extrabold text-sm tracking-wide flex items-center justify-center space-x-3 flex-shrink-0 cursor-pointer shadow-lg shadow-pink-500/20">
           <i data-lucide="sparkle" class="w-4 h-4"></i>
           <span id="generate-btn-text">Generate</span>
           <div class="flex items-center space-x-1 bg-white/20 px-2 py-0.5 rounded-lg text-xs font-black border border-white/30">
@@ -284,16 +310,16 @@
       </div>
 
       <!-- Second Row: Fine-tuned Model Dropdown & Style Elements -->
-      <div class="flex flex-wrap items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-200/80 text-xs">
+      <div class="flex flex-wrap items-center justify-between gap-2.5 mt-2.5 pt-2.5 border-t border-slate-200/80 text-xs">
         
-        <div class="flex items-center space-x-3">
+        <div class="flex flex-wrap items-center gap-2 max-w-full">
           <!-- Fine-Tuned Model Selector -->
-          <div class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
-            <span class="text-slate-500 font-bold">Model:</span>
-            <select id="model-select" class="bg-transparent text-purple-700 font-extrabold focus:outline-none cursor-pointer">
-              <option value="sdxl" selected>⚡ Belzora Vision XL (SDXL-Lightning • 3s Turbo & Sharp Faces)</option>
-              <option value="flux-dev">💎 Belzora Kino XL (FLUX.1 Dev • Ultra Photorealistic 28-Step)</option>
-              <option value="flux-schnell">🚀 Belzora Phoenix (FLUX.1 Schnell • 1024 HD)</option>
+          <div class="flex items-center space-x-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-sm max-w-full">
+            <span class="text-slate-500 font-bold text-[11px]">Model:</span>
+            <select id="model-select" class="bg-transparent text-purple-700 font-extrabold focus:outline-none cursor-pointer max-w-[160px] sm:max-w-xs md:max-w-sm text-xs truncate">
+              <option value="sdxl" selected>⚡ Belzora Vision XL (SDXL Turbo)</option>
+              <option value="flux-dev">💎 Belzora Kino XL (FLUX.1 Dev 28-Step)</option>
+              <option value="flux-schnell">🚀 Belzora Phoenix (FLUX.1 Schnell)</option>
             </select>
           </div>
 
@@ -309,14 +335,14 @@
         </div>
 
         <!-- Filter & View options (With Starred Favorites) -->
-        <div class="flex items-center space-x-2">
-          <span class="text-slate-500 font-bold text-[11px]">Filter:</span>
-          <button onclick="filterGallery('all')" data-filter="all" class="feed-filter-btn px-3 py-1 rounded-xl bg-purple-100 text-purple-800 border border-purple-300 font-black text-xs shadow-sm">All</button>
-          <button onclick="filterGallery('favorite')" data-filter="favorite" class="feed-filter-btn px-3 py-1 rounded-xl bg-white text-amber-600 hover:text-amber-700 border border-slate-200 text-xs font-bold shadow-sm flex items-center space-x-1">
+        <div class="flex items-center space-x-1 sm:space-x-2">
+          <span class="text-slate-500 font-bold text-[10px] sm:text-[11px]">Filter:</span>
+          <button onclick="filterGallery('all')" data-filter="all" class="feed-filter-btn px-2.5 py-1 rounded-xl bg-purple-100 text-purple-800 border border-purple-300 font-black text-xs shadow-sm">All</button>
+          <button onclick="filterGallery('favorite')" data-filter="favorite" class="feed-filter-btn px-2.5 py-1 rounded-xl bg-white text-amber-600 hover:text-amber-700 border border-slate-200 text-xs font-bold shadow-sm flex items-center space-x-1">
             <span>⭐ Starred</span>
           </button>
-          <button onclick="filterGallery('image')" data-filter="image" class="feed-filter-btn px-3 py-1 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold shadow-sm">Images</button>
-          <button onclick="filterGallery('video')" data-filter="video" class="feed-filter-btn px-3 py-1 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold shadow-sm">Videos</button>
+          <button onclick="filterGallery('image')" data-filter="image" class="feed-filter-btn px-2.5 py-1 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold shadow-sm">Images</button>
+          <button onclick="filterGallery('video')" data-filter="video" class="feed-filter-btn px-2.5 py-1 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold shadow-sm">Videos</button>
         </div>
 
       </div>
@@ -516,8 +542,42 @@
     </div>
   </div>
 
+  <!-- Mobile Bottom Navigation Bar (Visible only on < md screens) -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-xl border-t border-slate-200 z-30 flex items-center justify-around py-2 px-3 shadow-lg">
+    <a href="/" class="flex flex-col items-center text-slate-500 hover:text-purple-600 transition">
+      <i data-lucide="home" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold mt-0.5">Home</span>
+    </a>
+    <button onclick="switchLeonardoTab('image')" class="flex flex-col items-center text-purple-600 transition">
+      <i data-lucide="image" class="w-5 h-5 text-purple-600"></i>
+      <span class="text-[10px] font-extrabold mt-0.5">Studio</span>
+    </button>
+    <button onclick="toggleMobileSettings()" class="flex flex-col items-center text-slate-600 hover:text-purple-600 transition">
+      <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold mt-0.5">Settings</span>
+    </button>
+    <button onclick="toggleTagDrawer()" class="flex flex-col items-center text-slate-600 hover:text-purple-600 transition">
+      <i data-lucide="tags" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold mt-0.5">Tags</span>
+    </button>
+  </nav>
+
   <script src="/static/js/app.js?v=26.0"></script>
   <script>
+    function toggleMobileSettings() {
+      const rail = document.getElementById('leo-settings-rail');
+      const backdrop = document.getElementById('mobile-settings-backdrop');
+      if (rail) {
+        rail.classList.toggle('mobile-open');
+      }
+      if (backdrop) {
+        backdrop.classList.toggle('active');
+      }
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+      }
+    }
+
     try {
       if (typeof lucide !== 'undefined' && lucide.createIcons) {
         lucide.createIcons();
