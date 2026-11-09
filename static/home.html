@@ -38,14 +38,14 @@
 
   <!-- 1. STICKY GLASSMORPHISM NAVBAR -->
   <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 transition-all shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
       
       <!-- Logo & Brand Name -->
-      <a href="/" class="flex items-center space-x-3 group">
-        <div class="relative flex items-center justify-center w-10 h-10 rounded-2xl group-hover:scale-105 transition transform flex-shrink-0 shadow-md shadow-purple-500/15">
+      <a href="/" class="flex items-center space-x-2 sm:space-x-3 group flex-shrink-0">
+        <div class="relative flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl group-hover:scale-105 transition transform flex-shrink-0 shadow-md shadow-purple-500/15">
           <img src="/static/images/belzora-icon.svg" alt="Belzora AI" class="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(168,85,247,0.25)]">
         </div>
-        <span class="font-display font-black text-2xl tracking-tight text-slate-900 group-hover:text-purple-600 transition">
+        <span class="font-display font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-purple-600 transition">
           Belzora<span class="text-pink-500"> AI</span>
         </span>
       </a>
@@ -60,20 +60,20 @@
       </nav>
 
       <!-- Auth Action Area (Dynamic Guest / User State) -->
-      <div id="nav-auth-container" class="flex items-center space-x-3">
+      <div id="nav-auth-container" class="flex items-center space-x-1.5 sm:space-x-3">
         <!-- Guest View (Default) -->
-        <div id="nav-guest-view" class="flex items-center space-x-2.5">
-          <button onclick="openLoginModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-purple-700 hover:bg-purple-50 transition border border-slate-200 hover:border-purple-300">
+        <div id="nav-guest-view" class="flex items-center space-x-1.5 sm:space-x-2.5">
+          <button onclick="openLoginModal()" class="px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-purple-700 hover:bg-purple-50 transition border border-slate-200 hover:border-purple-300">
             Sign In
           </button>
-          <button onclick="openSignupModal()" class="btn-luminous-generate px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1.5 cursor-pointer">
-            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <button onclick="openSignupModal()" class="btn-luminous-generate px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1 sm:space-x-1.5 cursor-pointer">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             <span>Sign Up Free</span>
           </button>
         </div>
 
         <!-- Logged In User View (Hidden until authenticated) -->
-        <div id="nav-user-view" class="hidden flex items-center space-x-3">
+        <div id="nav-user-view" class="hidden flex items-center space-x-1.5 sm:space-x-3">
           <!-- Token Pill -->
           <div class="hidden sm:flex items-center space-x-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-black text-amber-700 shadow-sm">
             <i data-lucide="zap" class="w-3.5 h-3.5 fill-amber-500 text-amber-500"></i>
@@ -82,19 +82,20 @@
           </div>
 
           <!-- User Avatar & Name -->
-          <div class="flex items-center space-x-2 bg-white border border-slate-200 p-1.5 pr-3 rounded-2xl shadow-sm">
-            <img id="nav-user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Awais" class="w-7 h-7 rounded-xl object-cover bg-purple-50 border border-purple-200">
-            <span id="nav-user-name" class="text-xs font-bold text-slate-800 max-w-[120px] truncate">Creator</span>
+          <div class="flex items-center space-x-1.5 sm:space-x-2 bg-white border border-slate-200 p-1 sm:p-1.5 sm:pr-3 rounded-xl sm:rounded-2xl shadow-sm">
+            <img id="nav-user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Awais" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl object-cover bg-purple-50 border border-purple-200">
+            <span id="nav-user-name" class="text-xs font-bold text-slate-800 max-w-[80px] sm:max-w-[120px] truncate">Creator</span>
           </div>
 
           <!-- Launch Studio Button -->
-          <a href="/studio" class="btn-luminous-generate px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1.5">
-            <span>Launch Studio</span>
+          <a href="/studio" class="btn-luminous-generate px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1 sm:space-x-1.5">
+            <span class="hidden sm:inline">Launch Studio</span>
+            <span class="sm:hidden">Studio</span>
             <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
           </a>
 
           <!-- Logout Button -->
-          <button onclick="handleLogout()" title="Sign Out" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-200">
+          <button onclick="handleLogout()" title="Sign Out" class="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-200">
             <i data-lucide="log-out" class="w-4 h-4"></i>
           </button>
         </div>
@@ -104,17 +105,17 @@
   </header>
 
   <!-- 2. HERO SECTION -->
-  <section class="relative pt-10 pb-20 md:pt-16 md:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+  <section class="relative pt-6 pb-16 sm:pt-10 sm:pb-20 md:pt-16 md:pb-28 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
     
     <!-- Top Announcement Pill -->
-    <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-100 via-pink-100 to-cyan-100 border border-purple-200 text-xs font-extrabold text-purple-900 shadow-sm mb-6 hover:scale-105 transition cursor-pointer" onclick="goToStudio()">
-      <span class="flex h-2 w-2 rounded-full bg-pink-500 animate-pulse"></span>
-      <span>🚀 Version 4.0 Live • Dual-Core 1024x1024 HD Engine & Vision Remix</span>
-      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-pink-600"></i>
+    <div class="inline-flex items-center max-w-full px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-gradient-to-r from-purple-100 via-pink-100 to-cyan-100 border border-purple-200 text-[10px] sm:text-xs font-extrabold text-purple-900 shadow-sm mb-4 sm:mb-6 hover:scale-105 transition cursor-pointer text-left sm:text-center" onclick="goToStudio()">
+      <span class="flex h-2 w-2 rounded-full bg-pink-500 animate-pulse flex-shrink-0 mr-1.5"></span>
+      <span class="truncate sm:whitespace-normal">🚀 Version 4.0 Live • Dual-Core 1024x1024 HD Engine & Vision Remix</span>
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-pink-600 flex-shrink-0 ml-1"></i>
     </div>
 
     <!-- Main Hero Headline -->
-    <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl text-slate-900 tracking-tight leading-[1.1] max-w-5xl mx-auto mb-6">
+    <h1 class="font-display font-black text-3xl sm:text-5xl md:text-7xl text-slate-900 tracking-tight leading-[1.15] max-w-5xl mx-auto mb-4 sm:mb-6">
       Turn Your Imagination into <br class="hidden sm:inline">
       <span class="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 bg-clip-text text-transparent">
         Photorealistic 1024×1024
@@ -127,13 +128,13 @@
     </p>
 
     <!-- LIVE HERO PROMPT INPUT BAR (Real-Time Interactive) -->
-    <div id="hero-prompt-bar" class="max-w-3xl mx-auto mb-8">
-      <div class="bg-white/95 backdrop-blur-xl p-2.5 sm:p-3 rounded-3xl border-2 border-purple-200/80 shadow-2xl shadow-purple-500/15 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div class="flex-1 flex items-center px-3">
-          <i data-lucide="sparkles" class="w-5 h-5 text-purple-600 mr-2.5 flex-shrink-0"></i>
-          <input type="text" id="hero-prompt-input" value="A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render" placeholder="Describe anything you want to create (e.g. Cyberpunk tiger, elven queen)..." class="w-full bg-transparent text-xs sm:text-sm text-slate-900 font-semibold focus:outline-none placeholder-slate-400">
+    <div id="hero-prompt-bar" class="max-w-3xl mx-auto mb-6 sm:mb-8 px-1 sm:px-0">
+      <div class="bg-white/95 backdrop-blur-xl p-2 sm:p-3 rounded-2xl sm:rounded-3xl border-2 border-purple-200/80 shadow-xl sm:shadow-2xl shadow-purple-500/15 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div class="flex-1 flex items-center px-2.5 sm:px-3">
+          <i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mr-2 sm:mr-2.5 flex-shrink-0"></i>
+          <input type="text" id="hero-prompt-input" value="A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render" placeholder="Describe anything you want to create (e.g. Cyberpunk tiger)..." class="w-full bg-transparent text-xs sm:text-sm text-slate-900 font-semibold focus:outline-none placeholder-slate-400">
         </div>
-        <button onclick="launchStudioWithHeroInput()" class="btn-luminous-generate px-7 py-3.5 rounded-2xl font-display font-black text-xs sm:text-sm shadow-md flex items-center justify-center space-x-2 flex-shrink-0 cursor-pointer">
+        <button onclick="launchStudioWithHeroInput()" class="btn-luminous-generate w-full sm:w-auto px-5 py-3 sm:px-7 sm:py-3.5 rounded-xl sm:rounded-2xl font-display font-black text-xs sm:text-sm shadow-md flex items-center justify-center space-x-2 flex-shrink-0 cursor-pointer">
           <i data-lucide="wand-2" class="w-4 h-4"></i>
           <span>Create in Studio</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
@@ -141,61 +142,61 @@
       </div>
 
       <!-- Quick Interactive Prompt Vibe Pills -->
-      <div class="flex flex-wrap items-center justify-center gap-2 mt-3 text-xs">
-        <span class="text-slate-400 font-bold text-[11px] mr-1">Try Inspiration:</span>
-        <button onclick="fillHeroPrompt('✨ Cosmic Oracle', 'A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render')" class="px-3 py-1 rounded-full bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 font-bold transition shadow-sm">
+      <div class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-2.5 sm:mt-3 text-xs">
+        <span class="text-slate-400 font-bold text-[10px] sm:text-[11px] mr-1">Try Inspiration:</span>
+        <button onclick="fillHeroPrompt('✨ Cosmic Oracle', 'A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render')" class="px-2.5 py-1 rounded-full bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 font-bold text-[11px] sm:text-xs transition shadow-sm">
           ✨ Cosmic Oracle
         </button>
-        <button onclick="fillHeroPrompt('🐅 Cyber Tiger', 'A majestic cybernetic white tiger with golden mechanical engravings, prowling in a foggy bamboo forest, volumetric sunlight, 35mm lens')" class="px-3 py-1 rounded-full bg-white hover:bg-pink-50 text-slate-700 hover:text-pink-700 border border-slate-200 font-bold transition shadow-sm">
+        <button onclick="fillHeroPrompt('🐅 Cyber Tiger', 'A majestic cybernetic white tiger with golden mechanical engravings, prowling in a foggy bamboo forest, volumetric sunlight, 35mm lens')" class="px-2.5 py-1 rounded-full bg-white hover:bg-pink-50 text-slate-700 hover:text-pink-700 border border-slate-200 font-bold text-[11px] sm:text-xs transition shadow-sm">
           🐅 Cyber Tiger
         </button>
-        <button onclick="fillHeroPrompt('🧝 Elven Queen', 'Close-up portrait of an elven queen with emerald crown, bioluminescent flora woven in her hair, photorealistic skin texture, 8k')" class="px-3 py-1 rounded-full bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 font-bold transition shadow-sm">
+        <button onclick="fillHeroPrompt('🧝 Elven Queen', 'Close-up portrait of an elven queen with emerald crown, bioluminescent flora woven in her hair, photorealistic skin texture, 8k')" class="px-2.5 py-1 rounded-full bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 font-bold text-[11px] sm:text-xs transition shadow-sm">
           🧝 Elven Queen
         </button>
-        <button onclick="fillHeroPrompt('🏎️ Neon Synthwave', 'A vintage retro sports car racing along a neon synthwave highway toward a colossal digital sun, vaporwave aesthetic, 4k')" class="px-3 py-1 rounded-full bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 font-bold transition shadow-sm">
+        <button onclick="fillHeroPrompt('🏎️ Neon Synthwave', 'A vintage retro sports car racing along a neon synthwave highway toward a colossal digital sun, vaporwave aesthetic, 4k')" class="px-2.5 py-1 rounded-full bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 font-bold text-[11px] sm:text-xs transition shadow-sm">
           🏎️ Neon Synthwave
         </button>
       </div>
     </div>
 
     <!-- DYNAMIC HERO CTA BUTTONS (Adapts dynamically to Logged In vs Guest) -->
-    <div id="hero-actions-container" class="mb-14">
+    <div id="hero-actions-container" class="mb-10 sm:mb-14 px-1">
       
       <!-- VIEW A: When Logged In (e.g. Awais Creator) -->
-      <div id="hero-logged-in-view" class="hidden flex flex-col items-center justify-center space-y-4">
-        <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-2xl bg-purple-50 border border-purple-200 shadow-sm text-xs font-bold text-purple-900">
-          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>
-          <span>Signed in as <b id="hero-welcome-username" class="text-purple-700">Awais (Belzora Creator)</b> • <b>150 Daily Pro Tokens</b> Ready</span>
+      <div id="hero-logged-in-view" class="hidden flex flex-col items-center justify-center space-y-3 sm:space-y-4">
+        <div class="inline-flex items-center space-x-1.5 sm:space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl bg-purple-50 border border-purple-200 shadow-sm text-[11px] sm:text-xs font-bold text-purple-900 max-w-full">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 flex-shrink-0"></i>
+          <span class="truncate">Signed in as <b id="hero-welcome-username" class="text-purple-700">Awais (Creator)</b> • 150 Daily Tokens</span>
         </div>
         
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
-          <a href="/studio" class="btn-luminous-generate w-full sm:w-auto px-8 py-4 rounded-2xl font-display font-black text-base shadow-xl shadow-pink-500/25 hover:scale-105 transition flex items-center justify-center space-x-3 cursor-pointer">
-            <i data-lucide="rocket" class="w-5 h-5"></i>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4 w-full sm:w-auto">
+          <a href="/studio" class="btn-luminous-generate w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl font-display font-black text-sm sm:text-base shadow-xl shadow-pink-500/25 hover:scale-105 transition flex items-center justify-center space-x-2 sm:space-x-3 cursor-pointer">
+            <i data-lucide="rocket" class="w-4 h-4 sm:w-5 sm:h-5"></i>
             <span>Launch Creative Studio</span>
-            <span class="text-xs bg-white/25 px-2.5 py-0.5 rounded-lg border border-white/30">150 Tokens</span>
+            <span class="text-xs bg-white/25 px-2 py-0.5 rounded-lg border border-white/30">150 Tokens</span>
           </a>
 
-          <button onclick="document.getElementById('playground-section').scrollIntoView({behavior:'smooth'})" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-purple-300 font-display font-extrabold text-sm text-slate-800 hover:text-purple-700 shadow-md transition flex items-center justify-center space-x-2 cursor-pointer">
-            <i data-lucide="palette" class="w-5 h-5 text-purple-600"></i>
+          <button onclick="document.getElementById('playground-section').scrollIntoView({behavior:'smooth'})" class="w-full sm:w-auto px-6 py-3.5 sm:px-7 sm:py-4 rounded-xl sm:rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-purple-300 font-display font-extrabold text-xs sm:text-sm text-slate-800 hover:text-purple-700 shadow-md transition flex items-center justify-center space-x-2 cursor-pointer">
+            <i data-lucide="palette" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-600"></i>
             <span>Interactive Playground</span>
           </button>
         </div>
       </div>
 
       <!-- VIEW B: When Guest (Not signed in) -->
-      <div id="hero-guest-view" class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <button onclick="startFreeAction()" class="btn-luminous-generate w-full sm:w-auto px-8 py-4 rounded-2xl font-display font-black text-base shadow-xl shadow-pink-500/25 hover:scale-105 transition flex items-center justify-center space-x-3 cursor-pointer">
-          <i data-lucide="sparkle" class="w-5 h-5"></i>
+      <div id="hero-guest-view" class="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4">
+        <button onclick="startFreeAction()" class="btn-luminous-generate w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl font-display font-black text-sm sm:text-base shadow-xl shadow-pink-500/25 hover:scale-105 transition flex items-center justify-center space-x-2 sm:space-x-3 cursor-pointer">
+          <i data-lucide="sparkle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
           <span>Start Generating Free</span>
-          <span class="text-xs bg-white/25 px-2.5 py-0.5 rounded-lg border border-white/30">150 Credits</span>
+          <span class="text-xs bg-white/25 px-2 py-0.5 rounded-lg border border-white/30">150 Credits</span>
         </button>
 
-        <button onclick="goToStudio()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-purple-300 font-display font-extrabold text-base text-slate-800 hover:text-purple-700 shadow-md transition flex items-center justify-center space-x-2 cursor-pointer">
-          <i data-lucide="wand-2" class="w-5 h-5 text-purple-600"></i>
+        <button onclick="goToStudio()" class="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-purple-300 font-display font-extrabold text-xs sm:text-base text-slate-800 hover:text-purple-700 shadow-md transition flex items-center justify-center space-x-2 cursor-pointer">
+          <i data-lucide="wand-2" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-600"></i>
           <span>Explore Creative Studio</span>
         </button>
 
-        <button onclick="quickDemoLogin()" class="w-full sm:w-auto px-6 py-4 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold text-sm shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer">
+        <button onclick="quickDemoLogin()" class="w-full sm:w-auto px-5 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold text-xs sm:text-sm shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer">
           <i data-lucide="zap" class="w-4 h-4 fill-amber-500 text-amber-500"></i>
           <span>1-Click Demo Login</span>
         </button>
@@ -204,22 +205,22 @@
     </div>
 
     <!-- Trust Stats Strip -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-16">
-      <div class="p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm text-center">
-        <p class="font-display font-black text-2xl md:text-3xl text-purple-600">1024 × 1024</p>
-        <p class="text-xs text-slate-500 font-bold mt-1">Lossless True HD PNG</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto mb-10 sm:mb-16 px-1">
+      <div class="p-3 sm:p-4 bg-white/80 backdrop-blur-md rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p class="font-display font-black text-xl sm:text-2xl md:text-3xl text-purple-600">1024 × 1024</p>
+        <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-0.5 sm:mt-1">Lossless True HD</p>
       </div>
-      <div class="p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm text-center">
-        <p class="font-display font-black text-2xl md:text-3xl text-pink-600">14 Seconds</p>
-        <p class="text-xs text-slate-500 font-bold mt-1">Ultra-Fast Synthesis</p>
+      <div class="p-3 sm:p-4 bg-white/80 backdrop-blur-md rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p class="font-display font-black text-xl sm:text-2xl md:text-3xl text-pink-600">14 Seconds</p>
+        <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-0.5 sm:mt-1">Fast Synthesis</p>
       </div>
-      <div class="p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm text-center">
-        <p class="font-display font-black text-2xl md:text-3xl text-cyan-600">3-Tier Fallback</p>
-        <p class="text-xs text-slate-500 font-bold mt-1">Zero Server Busy Errors</p>
+      <div class="p-3 sm:p-4 bg-white/80 backdrop-blur-md rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p class="font-display font-black text-xl sm:text-2xl md:text-3xl text-cyan-600">3-Tier Fallback</p>
+        <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-0.5 sm:mt-1">Zero Downtime</p>
       </div>
-      <div class="p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm text-center">
-        <p class="font-display font-black text-2xl md:text-3xl text-amber-500">150 Daily</p>
-        <p class="text-xs text-slate-500 font-bold mt-1">Free Credits Refresh</p>
+      <div class="p-3 sm:p-4 bg-white/80 backdrop-blur-md rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p class="font-display font-black text-xl sm:text-2xl md:text-3xl text-amber-500">150 Daily</p>
+        <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-0.5 sm:mt-1">Free Credits</p>
       </div>
     </div>
 
@@ -1093,8 +1094,8 @@
   <!-- ================= AUTH MODALS ================= -->
 
   <!-- LOGIN MODAL -->
-  <div id="login-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-in fade-in duration-200">
+  <div id="login-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-8 shadow-2xl relative my-auto animate-in fade-in duration-200">
       
       <!-- Close button -->
       <button onclick="closeLoginModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-800 p-1.5 rounded-xl hover:bg-slate-100 transition">
@@ -1160,8 +1161,8 @@
   </div>
 
   <!-- SIGNUP MODAL -->
-  <div id="signup-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-in fade-in duration-200">
+  <div id="signup-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-8 shadow-2xl relative my-auto animate-in fade-in duration-200">
       
       <!-- Close button -->
       <button onclick="closeSignupModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-800 p-1.5 rounded-xl hover:bg-slate-100 transition">
