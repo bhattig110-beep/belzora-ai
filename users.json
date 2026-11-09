@@ -1,0 +1,20 @@
+[
+  {
+    "id": "usr_demo_01",
+    "name": "Awais (Belzora Creator)",
+    "email": "demo@belzora.ai",
+    "password_hash": "aaf610e0579b7a31b25a4d4269129902a245f2e09d3c63117ab229a4427eec21",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Awais",
+    "tokens": 150,
+    "created_at": 1793699413892
+  },
+  {
+    "id": "usr_demo_02",
+    "name": "Awais Creator",
+    "email": "demo@pixora.ai",
+    "password_hash": "9bed4218e0fc17a457bd97a2bee03a4b33d0d33e32a4f07ea51127b968741d9d",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Awais",
+    "tokens": 150,
+    "created_at": 1793699413892
+  }
+]

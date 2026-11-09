@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Belzora AI</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/images/belzora-icon.svg">
+  <link rel="icon" type="image/png" href="/static/images/belzora-icon.png">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/static/css/style.css?v=25.0">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans selection:bg-pink-500 selection:text-white relative min-h-screen overflow-x-hidden">
+
+  <!-- RADIANT MULTI-COLOR AMBIENT MESH (NO BLACK) -->
+  <div class="luminous-mesh"></div>
+  <div class="orb-glow-1"></div>
+  <div class="orb-glow-2"></div>
+
+  <!-- 1. STICKY GLASSMORPHISM NAVBAR -->
+  <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 transition-all shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Logo & Brand Name -->
+      <a href="/" class="flex items-center space-x-3 group">
+        <div class="relative flex items-center justify-center w-10 h-10 rounded-2xl group-hover:scale-105 transition transform flex-shrink-0 shadow-md shadow-purple-500/15">
+          <img src="/static/images/belzora-icon.svg" alt="Belzora AI" class="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(168,85,247,0.25)]">
+        </div>
+        <span class="font-display font-black text-2xl tracking-tight text-slate-900 group-hover:text-purple-600 transition">
+          Belzora<span class="text-pink-500"> AI</span>
+        </span>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-bold text-slate-600">
+        <a href="#features" class="hover:text-purple-600 transition">Features</a>
+        <a href="#showcase" class="hover:text-purple-600 transition">Showcase</a>
+        <a href="#models" class="hover:text-purple-600 transition">Models</a>
+        <a href="#pricing" class="hover:text-purple-600 transition">Tokens & Pricing</a>
+        <a href="#faq" class="hover:text-purple-600 transition">FAQ</a>
+      </nav>
+
+      <!-- Auth Action Area (Dynamic Guest / User State) -->
+      <div id="nav-auth-container" class="flex items-center space-x-3">
+        <!-- Guest View (Default) -->
+        <div id="nav-guest-view" class="flex items-center space-x-2.5">
+          <button onclick="openLoginModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-purple-700 hover:bg-purple-50 transition border border-slate-200 hover:border-purple-300">
+            Sign In
+          </button>
+          <button onclick="openSignupModal()" class="btn-luminous-generate px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1.5 cursor-pointer">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Sign Up Free</span>
+          </button>
+        </div>
+
+        <!-- Logged In User View (Hidden until authenticated) -->
+        <div id="nav-user-view" class="hidden flex items-center space-x-3">
+          <!-- Token Pill -->
+          <div class="hidden sm:flex items-center space-x-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-black text-amber-700 shadow-sm">
+            <i data-lucide="zap" class="w-3.5 h-3.5 fill-amber-500 text-amber-500"></i>
+            <span id="nav-token-display">150</span>
+            <span class="text-[10px] text-amber-500 uppercase font-black">Tokens</span>
+          </div>
+
+          <!-- User Avatar & Name -->
+          <div class="flex items-center space-x-2 bg-white border border-slate-200 p-1.5 pr-3 rounded-2xl shadow-sm">
+            <img id="nav-user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Awais" class="w-7 h-7 rounded-xl object-cover bg-purple-50 border border-purple-200">
+            <span id="nav-user-name" class="text-xs font-bold text-slate-800 max-w-[120px] truncate">Creator</span>
+          </div>
+
+          <!-- Launch Studio Button -->
+          <a href="/studio" class="btn-luminous-generate px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1.5">
+            <span>Launch Studio</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </a>
+
+          <!-- Logout Button -->
+          <button onclick="handleLogout()" title="Sign Out" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-200">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 2. HERO SECTION -->
+  <section class="relative pt-10 pb-20 md:pt-16 md:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+    
+    <!-- Top Announcement Pill -->
+    <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-100 via-pink-100 to-cyan-100 border border-purple-200 text-xs font-extrabold text-purple-900 shadow-sm mb-6 hover:scale-105 transition cursor-pointer" onclick="goToStudio()">
+      <span class="flex h-2 w-2 rounded-full bg-pink-500 animate-pulse"></span>
+      <span>🚀 Version 4.0 Live • Dual-Core 1024x1024 HD Engine & Vision Remix</span>
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-pink-600"></i>
+    </div>
+
+    <!-- Main Hero Headline -->
+    <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl text-slate-900 tracking-tight leading-[1.1] max-w-5xl mx-auto mb-6">
+      Turn Your Imagination into <br class="hidden sm:inline">
+      <span class="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 bg-clip-text text-transparent">
+        Photorealistic 1024×1024
+      </span> Masterpieces
+    </h1>
+
+    <!-- Hero Subtitle -->
+    <p class="text-base sm:text-lg md:text-xl text-slate-600 font-medium max-w-3xl mx-auto mb-8 leading-relaxed">
+      The pro creative AI suite with Dual-Core <b>FLUX.1 & SDXL-Lightning</b>, true Image-to-Image Vision Remix, 4K Super-Resolution, and Cinematic Motion. <b>100% Free daily tokens</b> with zero GPU queue limits.
+    </p>
+
+    <!-- LIVE HERO PROMPT INPUT BAR (Real-Time Interactive) -->
+    <div id="hero-prompt-bar" class="max-w-3xl mx-auto mb-8">
+      <div class="bg-white/95 backdrop-blur-xl p-2.5 sm:p-3 rounded-3xl border-2 border-purple-200/80 shadow-2xl shadow-purple-500/15 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div class="flex-1 flex items-center px-3">
+          <i data-lucide="sparkles" class="w-5 h-5 text-purple-600 mr-2.5 flex-shrink-0"></i>
+          <input type="text" id="hero-prompt-input" value="A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render" placeholder="Describe anything you want to create (e.g. Cyberpunk tiger, elven queen)..." class="w-full bg-transparent text-xs sm:text-sm text-slate-900 font-semibold focus:outline-none placeholder-slate-400">
+        </div>
+        <button onclick="launchStudioWithHeroInput()" class="btn-luminous-generate px-7 py-3.5 rounded-2xl font-display font-black text-xs sm:text-sm shadow-md flex items-center justify-center space-x-2 flex-shrink-0 cursor-pointer">
+          <i data-lucide="wand-2" class="w-4 h-4"></i>
+          <span>Create in Studio</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Quick Interactive Prompt Vibe Pills -->
+      <div class="flex flex-wrap items-center justify-center gap-2 mt-3 text-xs">
+        <span class="text-slate-400 font-bold text-[11px] mr-1">Try Inspiration:</span>
+        <button onclick="fillHeroPrompt('✨ Cosmic Oracle', 'A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render')" class="px-3 py-1 rounded-full bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 font-bold transition shadow-sm">
+          ✨ Cosmic Oracle
+        </button>
+        <button onclick="fillHeroPrompt('🐅 Cyber Tiger', 'A majestic cybernetic white tiger with golden mechanical engravings, prowling in a foggy bamboo forest, volumetric sunlight, 35mm lens')" class="px-3 py-1 rounded-full bg-white hover:bg-pink-50 text-slate-700 hover:text-pink-700 border border-slate-200 font-bold transition shadow-sm">
+          🐅 Cyber Tiger
+        </button>
+        <button onclick="fillHeroPrompt('🧝 Elven Queen', 'Close-up portrait of an elven queen with emerald crown, bioluminescent flora woven in her hair, photorealistic skin texture, 8k')" class="px-3 py-1 rounded-full bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 font-bold transition shadow-sm">
+          🧝 Elven Queen
+        </button>
+        <button onclick="fillHeroPrompt('🏎️ Neon Synthwave', 'A vintage retro sports car racing along a neon synthwave highway toward a colossal digital sun, vaporwave aesthetic, 4k')" class="px-3 py-1 rounded-full bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 font-bold transition shadow-sm">
+          🏎️ Neon Synthwave
+        </button>
+      </div>
+    </div>
+
+    <!-- DYNAMIC HERO CTA BUTTONS (Adapts dynamically to Logged In vs Guest) -->
+    <div id="hero-actions-container" class="mb-14">
+      
+      <!-- VIEW A: When Logged In (e.g. Awais Creator) -->
+      <div id="hero-logged-in-view" class="hidden flex flex-col items-center justify-center space-y-4">
+        <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-2xl bg-purple-50 border border-purple-200 shadow-sm text-xs font-bold text-purple-900">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>
+          <span>Signed in as <b id="hero-welcome-username" class="text-purple-700">Awais (Belzora Creator)</b> • <b>150 Daily Pro Tokens</b> Ready</span>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+          <a href="/studio" class="btn-luminous-generate w-full sm:w-auto px-8 py-4 rounded-2xl font-display font-black text-base shadow-xl shadow-pink-500/25 hover:scale-105 transition flex items-center justify-center space-x-3 cursor-pointer">
+            <i data-lucide="rocket" class="w-5 h-5"></i>
+            <span>Launch Creative Studio</span>
+            <span class="text-xs bg-white/25 px-2.5 py-0.5 rounded-lg border border-white/30">150 Tokens</span>
+          </a>
+
+          <button onclick="document.getElementById('playground-section').scrollIntoView({behavior:'smooth'})" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-purple-300 font-display font-extrabold text-sm text-slate-800 hover:text-purple-700 shadow-md transition flex items-center justify-center space-x-2 cursor-pointer">
+            <i data-lucide="palette" class="w-5 h-5 text-purple-600"></i>
+            <span>Interactive Playground</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- VIEW B: When Guest (Not signed in) -->
+      <div id="hero-guest-view" class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <button onclick="startFreeAction()" class="btn-luminous-generate w-full sm:w-auto px-8 py-4 rounded-2xl font-display font-black text-base shadow-xl shadow-pink-500/25 hover:scale-105 transition flex items-center justify-center space-x-3 cursor-pointer">
+          <i data-lucide="sparkle" class="w-5 h-5"></i>
+          <span>Start Generating Free</span>
+          <span class="text-xs bg-white/25 px-2.5 py-0.5 rounded-lg border border-white/30">150 Credits</span>
+        </button>
+
+        <button onclick="goToStudio()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-purple-300 font-display font-extrabold text-base text-slate-800 hover:text-purple-700 shadow-md transition flex items-center justify-center space-x-2 cursor-pointer">
+          <i data-lucide="wand-2" class="w-5 h-5 text-purple-600"></i>
+          <span>Explore Creative Studio</span>
+        </button>
+
+        <button onclick="quickDemoLogin()" class="w-full sm:w-auto px-6 py-4 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold text-sm shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer">
+          <i data-lucide="zap" class="w-4 h-4 fill-amber-500 text-amber-500"></i>
+          <span>1-Click Demo Login</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Trust Stats Strip -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-16">
+      <div class="p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p class="font-display font-black text-2xl md:text-3xl text-purple-600">1024 × 1024</p>
+        <p class="text-xs text-slate-500 font-bold mt-1">Lossless True HD PNG</p>
+      </div>
+      <div class="p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p class="font-display font-black text-2xl md:text-3xl text-pink-600">14 Seconds</p>
+        <p class="text-xs text-slate-500 font-bold mt-1">Ultra-Fast Synthesis</p>
+      </div>
+      <div class="p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p class="font-display font-black text-2xl md:text-3xl text-cyan-600">3-Tier Fallback</p>
+        <p class="text-xs text-slate-500 font-bold mt-1">Zero Server Busy Errors</p>
+      </div>
+      <div class="p-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm text-center">
+        <p class="font-display font-black text-2xl md:text-3xl text-amber-500">150 Daily</p>
+        <p class="text-xs text-slate-500 font-bold mt-1">Free Credits Refresh</p>
+      </div>
+    </div>
+
+    <!-- 3. INTERACTIVE HERO PREVIEW PLAYGROUND -->
+    <div id="playground-section" class="max-w-5xl mx-auto bg-white/95 backdrop-blur-2xl rounded-3xl border-2 border-slate-200 p-6 md:p-8 shadow-2xl shadow-purple-500/10 text-left relative overflow-hidden">
+      
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 border-b border-slate-200 gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h3 class="font-display font-black text-lg text-slate-900">Interactive Prompt Playground</h3>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">LIVE PREVIEW</span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">Click any creative prompt style below to preview generated latent outputs</p>
+        </div>
+
+        <button onclick="goToStudioFromHero()" class="btn-luminous-generate px-5 py-2.5 rounded-xl text-xs font-black shadow-md flex items-center space-x-2 self-start md:self-auto cursor-pointer">
+          <span>Open in Studio</span>
+          <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Sample Prompt Chips -->
+      <div class="flex flex-wrap gap-2 my-5">
+        <button onclick="setHeroSample(0)" class="hero-chip px-3.5 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 text-xs font-extrabold shadow-sm active">
+          ✨ Cosmic Oracle
+        </button>
+        <button onclick="setHeroSample(1)" class="hero-chip px-3.5 py-1.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-xs font-extrabold hover:bg-slate-100 transition shadow-sm">
+          🐅 Cyberpunk White Tiger
+        </button>
+        <button onclick="setHeroSample(2)" class="hero-chip px-3.5 py-1.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-xs font-extrabold hover:bg-slate-100 transition shadow-sm">
+          🧝 Bioluminescent Elven Queen
+        </button>
+        <button onclick="setHeroSample(3)" class="hero-chip px-3.5 py-1.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-xs font-extrabold hover:bg-slate-100 transition shadow-sm">
+          🏎️ Synthwave Neon Hypercar
+        </button>
+      </div>
+
+      <!-- Interactive Playground Card Preview -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+        <!-- Image Canvas Viewport -->
+        <div class="md:col-span-7 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 relative group aspect-square max-h-[440px] flex items-center justify-center">
+          <img id="hero-preview-img" src="/outputs/img_1793695292977.png" onerror="this.src='/outputs/img_var_1793691840943_0.webp'" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+          <div class="absolute top-3 left-3 bg-slate-900/75 backdrop-blur-md text-white text-[10px] font-black px-2.5 py-1 rounded-lg border border-white/20 flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-pink-500"></span>
+            <span id="hero-model-tag">SDXL-Lightning HD</span>
+          </div>
+          <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-black px-2.5 py-1 rounded-lg border border-slate-200 shadow">
+            1024 × 1024 Lossless PNG
+          </div>
+        </div>
+
+        <!-- Meta & Prompt Inspector -->
+        <div class="md:col-span-5 space-y-4">
+          <div>
+            <span class="text-[10px] font-black uppercase text-purple-700 tracking-wider">Active Prompt</span>
+            <p id="hero-prompt-text" class="text-xs font-semibold text-slate-800 mt-1 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render.
+            </p>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500 font-medium">Generation Speed:</span>
+              <span id="hero-speed-val" class="font-bold text-emerald-600">14.2s (Zero Quota)</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500 font-medium">Resolution:</span>
+              <span id="hero-res-val" class="font-bold text-slate-800">1024 × 1024 Native HD</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500 font-medium">Quality Profile:</span>
+              <span id="hero-quality-val" class="font-bold text-purple-700">PhotoReal High Dynamic</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="copyHeroPrompt()" class="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center transition border border-slate-200" title="Copy Prompt">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+            <button id="hero-studio-link" onclick="goToStudioFromHero()" class="flex-1 btn-luminous-generate py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 shadow-md cursor-pointer">
+              <i data-lucide="wand-2" class="w-4 h-4"></i>
+              <span>Generate This in Studio</span>
+            </button>
+          </div>
+          <div id="hero-copy-toast" class="hidden text-center text-[11px] font-bold text-emerald-600 bg-emerald-50 py-1 rounded-lg border border-emerald-200">
+            ✓ Prompt copied to clipboard!
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- 4. CORE FEATURES SECTION (INTERACTIVE BENTO GRID) -->
+  <section id="features" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-xs font-black uppercase text-purple-600 tracking-wider">Every Tool Works Live</span>
+      <h2 class="font-display font-black text-3xl sm:text-5xl text-slate-900 tracking-tight mt-1 mb-4">
+        Engineered for Pro Creators & Visionaries
+      </h2>
+      <p class="text-slate-600 font-medium text-base sm:text-lg">
+        Explore live interactive micro-previews of all 6 creative engines. Click and test every module in real time.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Feature 1: Dual-Core HD Engine (Interactive Model Switcher) -->
+      <div class="p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:border-purple-300 transition duration-300 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center shadow-inner">
+              <i data-lucide="cpu" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">INTERACTIVE DEMO</span>
+          </div>
+
+          <h3 class="font-display font-black text-xl text-slate-900 mb-2">Dual-Core 1024x1024 HD</h3>
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-4">
+            Switch between <b>FLUX.1 Schnell</b> (unmatched photorealism) and <b>SDXL-Lightning</b> (sub-second generation).
+          </p>
+
+          <!-- Interactive Model Toggle -->
+          <div class="bg-slate-100 p-1.5 rounded-2xl border border-slate-200 flex items-center mb-4">
+            <button onclick="toggleBentoEngine('flux')" id="bento-engine-flux" class="flex-1 py-1.5 rounded-xl text-xs font-black bg-white text-purple-700 shadow-sm transition">FLUX.1 Schnell</button>
+            <button onclick="toggleBentoEngine('sdxl')" id="bento-engine-sdxl" class="flex-1 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition">SDXL-Lightning</button>
+          </div>
+
+          <div id="bento-engine-specs" class="bg-purple-50/70 p-3 rounded-2xl border border-purple-100 text-xs space-y-1 mb-4">
+            <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Speed:</span> <b class="text-purple-700">14.2s (ZeroGPU)</b></div>
+            <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Quality:</span> <b class="text-slate-800">Ultra-Realistic Skin & Pores</b></div>
+            <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Native Output:</span> <b class="text-slate-800">1024 × 1024 PNG</b></div>
+          </div>
+        </div>
+
+        <div class="text-xs font-black text-purple-600 flex items-center space-x-1 pt-2 border-t border-slate-100">
+          <span>FLUX.1 + SDXL Engines Active</span>
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+        </div>
+      </div>
+
+      <!-- Feature 2: AI Vision Remix (Interactive Before/After Toggle) -->
+      <div class="p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:border-pink-300 transition duration-300 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center shadow-inner">
+              <i data-lucide="eye" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-200">INTERACTIVE DEMO</span>
+          </div>
+
+          <h3 class="font-display font-black text-xl text-slate-900 mb-2">AI Vision Remix (Img2Img)</h3>
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-4">
+            Neural vision analyzes subject contours, lighting, and anatomy to morph any uploaded photo into a masterpiece.
+          </p>
+
+          <!-- Interactive Before/After Visual Frame -->
+          <div class="relative rounded-2xl overflow-hidden border border-slate-200 mb-4 h-28 bg-slate-100 flex items-center justify-center group cursor-pointer" onclick="toggleVisionSample()">
+            <img id="bento-vision-img" src="/outputs/img_var_1793691840943_0.webp" onerror="this.src='/outputs/img_1793690649343.webp'" class="w-full h-full object-cover transition duration-300">
+            <span id="bento-vision-badge" class="absolute bottom-2 left-2 bg-pink-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md backdrop-blur-md shadow">
+              ✨ Remixed: Cyber White Tiger
+            </span>
+            <span class="absolute top-2 right-2 bg-white/90 text-slate-800 text-[9px] font-bold px-2 py-0.5 rounded-md shadow">
+              Click to Flip View
+            </span>
+          </div>
+        </div>
+
+        <div class="text-xs font-black text-pink-600 flex items-center space-x-1 pt-2 border-t border-slate-100">
+          <span>Vision Prompt Fusion Active</span>
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+        </div>
+      </div>
+
+      <!-- Feature 3: AI 4K Super-Resolution (Interactive Magnifier) -->
+      <div class="p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:border-cyan-300 transition duration-300 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-cyan-100 text-cyan-600 flex items-center justify-center shadow-inner">
+              <i data-lucide="maximize" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200">INTERACTIVE DEMO</span>
+          </div>
+
+          <h3 class="font-display font-black text-xl text-slate-900 mb-2">AI 4K Super-Resolution</h3>
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-4">
+            One-click super-sampling sharpens micro-details, restoring hair strands, iris glints, and skin porosity.
+          </p>
+
+          <!-- Interactive Magnifier Frame -->
+          <div class="bg-cyan-50/70 p-3 rounded-2xl border border-cyan-200 mb-4 text-xs">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-slate-700">Magnification Level:</span>
+              <span id="bento-scale-label" class="font-black text-cyan-700">4K UHD (2048px)</span>
+            </div>
+            <input type="range" min="1" max="2" value="2" oninput="updateBentoScale(this.value)" class="w-full accent-cyan-600 h-1.5 bg-cyan-200 rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+              <span>1024px Native</span>
+              <span>2048px Super-Res</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs font-black text-cyan-600 flex items-center space-x-1 pt-2 border-t border-slate-100">
+          <span>One-Click 4K Upscale Ready</span>
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+        </div>
+      </div>
+
+      <!-- Feature 4: Motion 2.0 Video Synthesis -->
+      <div class="p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:border-amber-300 transition duration-300 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-inner">
+              <i data-lucide="film" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">ANIMATION ENGINE</span>
+          </div>
+
+          <h3 class="font-display font-black text-xl text-slate-900 mb-2">Motion 2.0 Video Synthesis</h3>
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-4">
+            Transform static canvases into 5-second cinematic loops with realistic fluid dynamics and camera pans.
+          </p>
+
+          <div class="p-3 bg-amber-50/70 rounded-2xl border border-amber-200 mb-4 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-semibold">Camera Vector:</span>
+              <span class="font-black text-amber-700">Cinematic Orbit 360°</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-semibold">Duration:</span>
+              <span class="font-bold text-slate-800">5.0s Lossless MP4</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-semibold">FPS & Quality:</span>
+              <span class="font-bold text-slate-800">24 FPS Smooth Interp</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs font-black text-amber-600 flex items-center space-x-1 pt-2 border-t border-slate-100">
+          <span>MP4 Video Animation Active</span>
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+        </div>
+      </div>
+
+      <!-- Feature 5: Prompt Tag Forge (Interactive Chips) -->
+      <div class="p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:border-purple-300 transition duration-300 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center shadow-inner">
+              <i data-lucide="tags" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">INTERACTIVE BUILDER</span>
+          </div>
+
+          <h3 class="font-display font-black text-xl text-slate-900 mb-2">Prompt Tag Forge & Magic</h3>
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-3">
+            Click any tag below to see how it auto-injects cinematic modifiers into your creation:
+          </p>
+
+          <!-- Interactive Clickable Tags -->
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <button onclick="injectBentoTag('☀️ Golden Hour')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 text-[10px] font-bold border border-slate-200 transition">+ ☀️ Golden Hour</button>
+            <button onclick="injectBentoTag('📸 85mm Bokeh')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-700 hover:text-emerald-800 text-[10px] font-bold border border-slate-200 transition">+ 📸 85mm Bokeh</button>
+            <button onclick="injectBentoTag('⚡ Cyberpunk Neon')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-cyan-100 text-slate-700 hover:text-cyan-800 text-[10px] font-bold border border-slate-200 transition">+ ⚡ Neon</button>
+            <button onclick="injectBentoTag('🎮 Unreal 5')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-800 text-[10px] font-bold border border-slate-200 transition">+ 🎮 Unreal 5</button>
+          </div>
+
+          <!-- Live Sample String -->
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[11px] text-slate-700 font-mono mb-4 truncate" id="bento-tag-display">
+            Sample: Portrait of an astronaut
+          </div>
+        </div>
+
+        <div class="text-xs font-black text-purple-600 flex items-center space-x-1 pt-2 border-t border-slate-100">
+          <span>Wand-2 AI Enhancement</span>
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+        </div>
+      </div>
+
+      <!-- Feature 6: Failproof 3-Tier Pipeline (Live Status Ping) -->
+      <div class="p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:border-emerald-300 transition duration-300 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">LIVE CLUSTER PING</span>
+          </div>
+
+          <h3 class="font-display font-black text-xl text-slate-900 mb-2">3-Tier Failproof Pipeline</h3>
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-4">
+            Zero "Server busy" errors. If one node experiences high queue, queries auto-cascade seamlessly across backup clusters.
+          </p>
+
+          <div class="bg-emerald-50/70 p-3 rounded-2xl border border-emerald-200 mb-4 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="flex items-center text-slate-700 font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-2"></span>FLUX ZeroGPU Core:</span>
+              <b class="text-emerald-700 font-black">99.98% Online (24ms)</b>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center text-slate-700 font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>SDXL-Lightning Tier:</span>
+              <b class="text-emerald-700 font-black">Standby Ready (0ms)</b>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center text-slate-700 font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>SQLite Local Store:</span>
+              <b class="text-emerald-700 font-black">Active WAL Mode</b>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs font-black text-emerald-600 flex items-center space-x-1 pt-2 border-t border-slate-100">
+          <span>99.9% Generation Reliability</span>
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5. COMMUNITY SHOWCASE SECTION -->
+  <section id="showcase" class="py-20 bg-slate-100/60 border-y border-slate-200 scroll-mt-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row items-start md:items-end justify-between mb-12 gap-4">
+        <div>
+          <span class="text-xs font-black uppercase text-pink-600 tracking-wider">Inspiration Feed</span>
+          <h2 class="font-display font-black text-3xl sm:text-4xl text-slate-900 mt-1">
+            Created with Belzora Studio
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 font-medium mt-1">High-fidelity renders generated directly in our creative suite</p>
+        </div>
+
+        <button onclick="goToStudio()" class="btn-luminous-generate px-6 py-2.5 rounded-xl font-black text-xs shadow-md flex items-center space-x-2 cursor-pointer">
+          <i data-lucide="palette" class="w-4 h-4"></i>
+          <span>Create in Studio</span>
+        </button>
+      </div>
+
+      <!-- Gallery Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        
+        <!-- Showcase Card 1 -->
+        <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition duration-300 group">
+          <div class="aspect-square relative overflow-hidden bg-slate-100">
+            <img src="/outputs/img_1793695292977.png" onerror="this.src='/outputs/img_1793690978988.webp'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+            <span class="absolute top-2.5 left-2.5 bg-black/60 text-white text-[9px] font-black px-2 py-0.5 rounded-md backdrop-blur-md">FLUX HD</span>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-bold text-slate-800 line-clamp-2 mb-2">Ancient cosmic oracle with glowing violet eyes, star dust drifting, octane render</p>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+              <span class="text-[10px] text-slate-400 font-bold">1024 × 1024</span>
+              <button onclick="goToStudio('Ancient cosmic oracle with glowing violet eyes, star dust drifting, octane render')" class="text-xs font-black text-purple-600 hover:text-pink-600 transition flex items-center space-x-1 cursor-pointer">
+                <span>Remix</span>
+                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Showcase Card 2 -->
+        <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition duration-300 group">
+          <div class="aspect-square relative overflow-hidden bg-slate-100">
+            <img src="/outputs/img_var_1793691840943_0.webp" onerror="this.src='/outputs/img_1793690649343.webp'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+            <span class="absolute top-2.5 left-2.5 bg-pink-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md backdrop-blur-md">VISION REMIX</span>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-bold text-slate-800 line-clamp-2 mb-2">Cybernetic white tiger with golden mechanical engravings in bamboo forest</p>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+              <span class="text-[10px] text-slate-400 font-bold">1024 × 1024</span>
+              <button onclick="goToStudio('Cybernetic white tiger with golden mechanical engravings in bamboo forest')" class="text-xs font-black text-purple-600 hover:text-pink-600 transition flex items-center space-x-1 cursor-pointer">
+                <span>Remix</span>
+                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Showcase Card 3 -->
+        <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition duration-300 group">
+          <div class="aspect-square relative overflow-hidden bg-slate-100">
+            <img src="/outputs/upscaled_img_1793690649343.webp" onerror="this.src='/outputs/img_1793690534873.webp'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+            <span class="absolute top-2.5 left-2.5 bg-cyan-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md backdrop-blur-md">4K UPSCALE</span>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-bold text-slate-800 line-clamp-2 mb-2">Bioluminescent elven queen with emerald crown, photorealistic skin pores</p>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+              <span class="text-[10px] text-slate-400 font-bold">2048 × 2048 UHD</span>
+              <button onclick="goToStudio('Bioluminescent elven queen with emerald crown, photorealistic skin pores')" class="text-xs font-black text-purple-600 hover:text-pink-600 transition flex items-center space-x-1 cursor-pointer">
+                <span>Remix</span>
+                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Showcase Card 4 -->
+        <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition duration-300 group">
+          <div class="aspect-square relative overflow-hidden bg-slate-100">
+            <img src="/outputs/img_1793690534873.webp" onerror="this.src='/outputs/img_1793689150853.webp'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+            <span class="absolute top-2.5 left-2.5 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-md backdrop-blur-md">SDXL PRO</span>
+          </div>
+          <div class="p-4">
+            <p class="text-xs font-bold text-slate-800 line-clamp-2 mb-2">Retro synthwave sports car racing along neon digital highway at sunset</p>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+              <span class="text-[10px] text-slate-400 font-bold">1024 × 1024</span>
+              <button onclick="goToStudio('Retro synthwave sports car racing along neon digital highway at sunset')" class="text-xs font-black text-purple-600 hover:text-pink-600 transition flex items-center space-x-1 cursor-pointer">
+                <span>Remix</span>
+                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5.5 AI FOUNDATION MODELS SECTION -->
+  <section id="models" class="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-xs font-black uppercase text-purple-600 tracking-wider">Neural Architecture</span>
+      <h2 class="font-display font-black text-3xl sm:text-5xl text-slate-900 tracking-tight mt-1 mb-4">
+        Dual-Core Foundation AI Models
+      </h2>
+      <p class="text-slate-600 font-medium text-base sm:text-lg">
+        Belzora AI combines 12-billion parameter flow-matching transformers with sub-second lightning diffusion to give you maximum fidelity with zero queue wait.
+      </p>
+    </div>
+
+    <!-- Models Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+      
+      <!-- Model Card 1: FLUX.1 Schnell -->
+      <div class="p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-purple-400 shadow-sm hover:shadow-xl transition flex flex-col justify-between group relative">
+        <div class="absolute top-4 right-4 bg-purple-100 text-purple-700 text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider border border-purple-200">
+          12B Transformer
+        </div>
+
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-100 to-pink-100 text-purple-600 flex items-center justify-center mb-6 shadow-inner group-hover:scale-105 transition">
+            <i data-lucide="cpu" class="w-6 h-6"></i>
+          </div>
+
+          <h3 class="font-display font-black text-2xl text-slate-900 mb-2">FLUX.1 Schnell</h3>
+          <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-4">Black Forest Labs • Flow Matching</p>
+          
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6">
+            The gold standard for photorealistic human portraits, authentic skin pores, intricate jewelry, natural lighting falloff, and complex spatial typography.
+          </p>
+
+          <div class="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-700 mb-8">
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Native Resolution:</span>
+              <span class="font-bold text-slate-900">1024 × 1024 PNG</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Inference Latency:</span>
+              <span class="font-bold text-purple-600">~12 - 14s (ZeroGPU)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Diffusion Steps:</span>
+              <span class="font-bold text-slate-900">4-Step Flow Latents</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Best Suited For:</span>
+              <span class="font-bold text-emerald-600">Photorealism & Texture</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="goToStudio('A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, 8k, photoreal')" class="w-full py-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-900 font-black text-xs border border-purple-200 transition flex items-center justify-center space-x-2">
+          <span>Test FLUX.1 in Studio</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Model Card 2: SDXL-Lightning -->
+      <div class="p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-pink-400 shadow-sm hover:shadow-xl transition flex flex-col justify-between group relative">
+        <div class="absolute top-4 right-4 bg-pink-100 text-pink-700 text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider border border-pink-200">
+          Sub-Second Engine
+        </div>
+
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-pink-100 to-rose-100 text-pink-600 flex items-center justify-center mb-6 shadow-inner group-hover:scale-105 transition">
+            <i data-lucide="zap" class="w-6 h-6"></i>
+          </div>
+
+          <h3 class="font-display font-black text-2xl text-slate-900 mb-2">SDXL-Lightning</h3>
+          <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-4">ByteDance • 4-Step Progressive</p>
+          
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6">
+            Engineered for high-velocity concept iteration. Generates vibrant cinematic art, synthwave landscapes, stylized fantasy characters, and 3D mockups in seconds.
+          </p>
+
+          <div class="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-700 mb-8">
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Native Resolution:</span>
+              <span class="font-bold text-slate-900">1024 × 1024 PNG</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Inference Latency:</span>
+              <span class="font-bold text-pink-600">~7.8s (Instant Speed)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Diffusion Steps:</span>
+              <span class="font-bold text-slate-900">4-Step Accelerated</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Best Suited For:</span>
+              <span class="font-bold text-emerald-600">Rapid Concept Prototyping</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="goToStudio('A vintage retro sports car racing along a neon synthwave highway toward a colossal digital sun, 4k')" class="w-full py-3 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 hover:text-pink-900 font-black text-xs border border-pink-200 transition flex items-center justify-center space-x-2">
+          <span>Test SDXL in Studio</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Model Card 3: Multimodal Vision & 4K Super-Res -->
+      <div class="p-8 rounded-3xl bg-white border-2 border-slate-200 hover:border-cyan-400 shadow-sm hover:shadow-xl transition flex flex-col justify-between group relative">
+        <div class="absolute top-4 right-4 bg-cyan-100 text-cyan-700 text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider border border-cyan-200">
+          Neural Img2Img & 4K
+        </div>
+
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-100 to-blue-100 text-cyan-600 flex items-center justify-center mb-6 shadow-inner group-hover:scale-105 transition">
+            <i data-lucide="eye" class="w-6 h-6"></i>
+          </div>
+
+          <h3 class="font-display font-black text-2xl text-slate-900 mb-2">Vision & 4K Upscale</h3>
+          <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-4">Multimodal Feature Guidance</p>
+          
+          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6">
+            Upload any source photo or sketch. Our neural vision extractor preserves pose, expressions, and subject anatomy, upscaling outputs to pristine 2048×2048 UHD.
+          </p>
+
+          <div class="space-y-2.5 pt-4 border-t border-slate-100 text-xs text-slate-700 mb-8">
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Max Upscale:</span>
+              <span class="font-bold text-slate-900">2048 × 2048 UHD</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Remix Guidance:</span>
+              <span class="font-bold text-cyan-600">30% to 95% Strength</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Motion Dynamics:</span>
+              <span class="font-bold text-slate-900">5s MP4 Smooth Loops</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400 font-semibold">Best Suited For:</span>
+              <span class="font-bold text-emerald-600">Photo Restyling & Print 4K</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="goToStudio()" class="w-full py-3 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 hover:text-cyan-900 font-black text-xs border border-cyan-200 transition flex items-center justify-center space-x-2">
+          <span>Try Vision Remix in Studio</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Quick Recommendation Strip -->
+    <div class="p-6 bg-gradient-to-r from-purple-50 via-white to-cyan-50 rounded-2xl border border-purple-200/80 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-3 text-xs text-slate-700">
+        <div class="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
+          <i data-lucide="help-circle" class="w-4 h-4"></i>
+        </div>
+        <p class="font-semibold">
+          <b>Unsure which engine to choose?</b> Use <b>FLUX.1</b> for realistic people & products, <b>SDXL</b> for fast ideas & wallpaper art, and <b>Vision Remix</b> to transform your own uploaded photos.
+        </p>
+      </div>
+      <button onclick="goToStudio()" class="btn-luminous-generate px-6 py-2.5 rounded-xl font-black text-xs whitespace-nowrap shadow-md cursor-pointer flex-shrink-0">
+        Launch Studio Now
+      </button>
+    </div>
+  </section>
+
+  <!-- 6. PRICING & TOKEN SYSTEM -->
+  <section id="pricing" class="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-xs font-black uppercase text-purple-600 tracking-wider">Free Token Model</span>
+      <h2 class="font-display font-black text-3xl sm:text-5xl text-slate-900 tracking-tight mt-1 mb-4">
+        100% Free Daily Tokens. No Credit Card.
+      </h2>
+      <p class="text-slate-600 font-medium text-base">
+        Every account receives 150 high-speed generation credits automatically refreshed every single day.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+      
+      <!-- Free Starter Plan -->
+      <div class="p-8 rounded-3xl bg-white border-2 border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between relative">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-black uppercase text-slate-500 tracking-wider">Community Starter</span>
+            <span class="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">Free Forever</span>
+          </div>
+          <div class="flex items-baseline space-x-2 mb-2">
+            <span class="font-display font-black text-5xl text-slate-900">$0</span>
+            <span class="text-slate-500 font-bold text-sm">/ month</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-semibold mb-6">Standard tier included automatically with every new registration</p>
+
+          <ul class="space-y-3.5 text-xs text-slate-600 font-medium mb-8">
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+              <span><b>150 Daily Free Tokens</b> (Refreshed every 24h)</span>
+            </li>
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+              <span><b>1024 × 1024 Lossless HD</b> FLUX & SDXL engines</span>
+            </li>
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+              <span>AI Vision Photo Remix (Img2Img)</span>
+            </li>
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+              <span>4K Super-Resolution Upscaling</span>
+            </li>
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+              <span>Motion 2.0 Video Animation</span>
+            </li>
+          </ul>
+        </div>
+
+        <button id="pricing-starter-btn" onclick="openSignupModal()" class="w-full py-3.5 rounded-xl border-2 border-slate-200 hover:border-purple-400 font-black text-xs text-slate-800 hover:text-purple-700 transition">
+          Get Started Free
+        </button>
+      </div>
+
+      <!-- Pro Creator Beta Plan (Featured Card) -->
+      <div class="p-8 rounded-3xl bg-white border-2 border-purple-400 shadow-xl shadow-purple-500/10 relative flex flex-col justify-between hover:shadow-2xl transition">
+        
+        <!-- Elegant Top Floating Badge (No overflow-hidden so it is never clipped) -->
+        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white text-[11px] font-black px-4 py-1 rounded-full shadow-lg shadow-purple-500/25 uppercase tracking-wider flex items-center space-x-1.5 whitespace-nowrap z-20 border border-white/60">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>Free Public Beta</span>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-4 mt-1">
+            <span class="text-xs font-black uppercase text-purple-700 tracking-wider">Pro Creator Suite</span>
+            <span class="text-xs font-extrabold px-3 py-1 rounded-full bg-purple-100 text-purple-700 border border-purple-200">Early Access</span>
+          </div>
+          <div class="flex items-baseline space-x-2 mb-2">
+            <span class="font-display font-black text-5xl text-purple-600">$0</span>
+            <span class="text-slate-500 font-bold text-sm">/ during public beta</span>
+          </div>
+          <p class="text-[11px] text-purple-600/80 font-semibold mb-6">Full creator privileges with custom GPU token support</p>
+
+          <ul class="space-y-3.5 text-xs text-slate-700 font-medium mb-8">
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-purple-600 flex-shrink-0"></i>
+              <span><b>Connect Your Own Hugging Face Token</b> for unlimited speed</span>
+            </li>
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-purple-600 flex-shrink-0"></i>
+              <span>Priority SDXL-Lightning 4-step generation</span>
+            </li>
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-purple-600 flex-shrink-0"></i>
+              <span>Full Commercial Usage rights on all creations</span>
+            </li>
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-purple-600 flex-shrink-0"></i>
+              <span>Batch Generation (up to 4 variations simultaneously)</span>
+            </li>
+            <li class="flex items-center space-x-2.5">
+              <i data-lucide="check" class="w-4 h-4 text-purple-600 flex-shrink-0"></i>
+              <span>Zero server queues and priority execution</span>
+            </li>
+          </ul>
+        </div>
+
+        <button id="pricing-pro-btn" onclick="startFreeAction()" class="btn-luminous-generate w-full py-3.5 rounded-xl font-black text-xs shadow-lg shadow-pink-500/25">
+          Claim Free Pro Beta Access
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 7. FAQ ACCORDION -->
+  <section id="faq" class="py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto border-t border-slate-200 scroll-mt-24">
+    <div class="text-center mb-12">
+      <span class="text-xs font-black uppercase text-pink-600 tracking-wider">Got Questions?</span>
+      <h2 class="font-display font-black text-3xl sm:text-4xl text-slate-900 mt-1">Frequently Asked Questions</h2>
+    </div>
+
+    <div class="space-y-3">
+      
+      <!-- FAQ 1 -->
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <button onclick="toggleFaq(this)" class="w-full p-5 text-left flex items-center justify-between font-display font-black text-sm text-slate-800 hover:text-purple-600 transition">
+          <span>Is Belzora AI really 100% free to use?</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </button>
+        <div class="px-5 pb-5 text-xs text-slate-600 font-medium leading-relaxed hidden">
+          Yes! Belzora AI is built on open-source foundation models (FLUX.1-schnell and SDXL-Lightning) running on free high-performance inference clusters. Every user gets 150 daily tokens without any credit card or subscription requirement.
+        </div>
+      </div>
+
+      <!-- FAQ 2 -->
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <button onclick="toggleFaq(this)" class="w-full p-5 text-left flex items-center justify-between font-display font-black text-sm text-slate-800 hover:text-purple-600 transition">
+          <span>How does the Image-to-Image (Vision Remix) feature work?</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </button>
+        <div class="px-5 pb-5 text-xs text-slate-600 font-medium leading-relaxed hidden">
+          Simply drop or upload any photo into the Left Settings Rail. Our AI vision engine analyzes the subject's anatomy, pose, expressions, and lighting in ~10 seconds. You can then adjust the "Remix Influence" slider (30% to 95%) and describe any new artistic setting or style to transform your photo!
+        </div>
+      </div>
+
+      <!-- FAQ 3 -->
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <button onclick="toggleFaq(this)" class="w-full p-5 text-left flex items-center justify-between font-display font-black text-sm text-slate-800 hover:text-purple-600 transition">
+          <span>What resolution do images generate at?</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </button>
+        <div class="px-5 pb-5 text-xs text-slate-600 font-medium leading-relaxed hidden">
+          All images generate in authentic 1024×1024 HD lossless PNG format. You can also click the "🔍 AI Upscale to 4K" button inside the Inspector modal to upscale images to 2048×2048 UHD with enhanced crisp textures.
+        </div>
+      </div>
+
+      <!-- FAQ 4 -->
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <button onclick="toggleFaq(this)" class="w-full p-5 text-left flex items-center justify-between font-display font-black text-sm text-slate-800 hover:text-purple-600 transition">
+          <span>Can I use my own Hugging Face token?</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+        </button>
+        <div class="px-5 pb-5 text-xs text-slate-600 font-medium leading-relaxed hidden">
+          Yes! If you have a free Hugging Face token, you can click the Settings gear icon in the Studio and save your token for dedicated high-priority execution. Even without a token, our built-in SDXL-Lightning engine guarantees 100% working generation.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 8. BOTTOM CALL TO ACTION BANNER -->
+  <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div class="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 rounded-3xl p-8 sm:p-14 text-white text-center shadow-2xl relative overflow-hidden">
+      <div class="relative z-10 max-w-3xl mx-auto">
+        <h2 class="font-display font-black text-3xl sm:text-5xl tracking-tight mb-4 text-white">
+          Ready to Bring Your Ideas to Life?
+        </h2>
+        <p class="text-sm sm:text-base text-white/90 font-medium mb-8 max-w-xl mx-auto">
+          Join pro creators and digital artists synthesizing next-level visuals with Belzora AI Studio today.
+        </p>
+
+        <!-- Dynamic Bottom CTA Buttons -->
+        <div id="bottom-cta-guest" class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button onclick="goToStudio()" class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-white text-purple-700 font-display font-black text-sm shadow-xl hover:bg-slate-100 transition transform hover:scale-105">
+            Launch Belzora Studio Free
+          </button>
+          <button onclick="quickDemoLogin()" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs border border-white/30 transition">
+            Instant 1-Click Demo Sign In
+          </button>
+        </div>
+
+        <div id="bottom-cta-user" class="hidden flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="/studio" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-purple-700 font-display font-black text-sm shadow-xl hover:bg-slate-100 transition transform hover:scale-105 flex items-center justify-center space-x-2">
+            <i data-lucide="rocket" class="w-4 h-4"></i>
+            <span>Enter Creative Studio (150 Tokens)</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. PRO SUITE FOOTER -->
+  <footer class="bg-white border-t border-slate-200/80 pt-16 pb-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Top Grid: 4 Pro Columns -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-slate-100">
+        
+        <!-- Column 1: Brand & Tagline (5 cols) -->
+        <div class="md:col-span-5 space-y-4">
+          <a href="/" class="flex items-center space-x-3 group inline-flex">
+            <div class="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-500/15">
+              <img src="/static/images/belzora-icon.svg" alt="Belzora AI" class="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(168,85,247,0.3)]">
+            </div>
+            <span class="font-display font-black text-xl tracking-tight text-slate-900 group-hover:text-purple-600 transition">
+              Belzora<span class="text-pink-500"> AI</span>
+            </span>
+          </a>
+
+          <p class="text-xs text-slate-500 font-medium leading-relaxed max-w-sm">
+            Next-generation generative AI creative studio. Synthesize lossless 1024×1024 photorealistic masterpieces, 4K super-resolution, and cinematic motion with dual-core FLUX.1 & SDXL engines.
+          </p>
+
+          <div class="inline-flex items-center space-x-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>All AI Inference Clusters Operational (99.98%)</span>
+          </div>
+        </div>
+
+        <!-- Column 2: Studio Engines (2 cols) -->
+        <div class="md:col-span-2 space-y-3">
+          <h4 class="font-display font-extrabold text-xs uppercase tracking-wider text-slate-900">Studio Engines</h4>
+          <ul class="space-y-2.5 text-xs font-semibold text-slate-500">
+            <li><button onclick="goToStudio()" class="hover:text-purple-600 transition">FLUX.1 Schnell HD</button></li>
+            <li><button onclick="goToStudio()" class="hover:text-purple-600 transition">SDXL-Lightning</button></li>
+            <li><button onclick="goToStudio()" class="hover:text-purple-600 transition">Vision Remix (Img2Img)</button></li>
+            <li><button onclick="goToStudio()" class="hover:text-purple-600 transition">4K Super-Resolution</button></li>
+            <li><button onclick="goToStudio()" class="hover:text-purple-600 transition">Motion 2.0 Video</button></li>
+          </ul>
+        </div>
+
+        <!-- Column 3: Platform & Tools (2 cols) -->
+        <div class="md:col-span-2 space-y-3">
+          <h4 class="font-display font-extrabold text-xs uppercase tracking-wider text-slate-900">Platform</h4>
+          <ul class="space-y-2.5 text-xs font-semibold text-slate-500">
+            <li><a href="#playground-section" class="hover:text-purple-600 transition">Prompt Playground</a></li>
+            <li><a href="#features" class="hover:text-purple-600 transition">Core Features</a></li>
+            <li><a href="#showcase" class="hover:text-purple-600 transition">Community Gallery</a></li>
+            <li><a href="#pricing" class="hover:text-purple-600 transition">Tokens & Pricing</a></li>
+            <li><a href="#faq" class="hover:text-purple-600 transition">Creator FAQ</a></li>
+          </ul>
+        </div>
+
+        <!-- Column 4: Quick Launch (3 cols) -->
+        <div class="md:col-span-3 space-y-3">
+          <h4 class="font-display font-extrabold text-xs uppercase tracking-wider text-slate-900">Free Daily Access</h4>
+          <p class="text-xs text-slate-500 leading-relaxed font-medium">
+            150 high-speed generation tokens automatically reset every 24 hours. No credit card required.
+          </p>
+          <button onclick="startFreeAction()" class="btn-luminous-generate w-full py-2.5 px-4 rounded-xl text-xs font-black shadow-md flex items-center justify-center space-x-2">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Launch Studio Free</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 font-medium gap-4">
+        <div>
+          <span>© 2026 Belzora AI Technologies Inc. All rights reserved.</span>
+        </div>
+        <div>
+          <span>Crafted with ❤️ by Awais Ahmad Bhatti</span>
+        </div>
+        <div class="flex items-center space-x-5 text-slate-500 font-semibold text-xs">
+          <button onclick="alert('Belzora AI adheres to strict data privacy standards. Your generations remain private and isolated to your user account.');" class="hover:text-purple-600 transition">Privacy</button>
+          <button onclick="alert('All creations synthesized on Belzora AI include full commercial usage rights.');" class="hover:text-purple-600 transition">Terms</button>
+          <button onclick="alert('Belzora AI operates failproof sandboxed inference with ZeroGPU multi-cluster routing.');" class="hover:text-purple-600 transition">Security</button>
+          <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="hover:text-purple-600 transition flex items-center space-x-1 cursor-pointer">
+            <span>Back to Top</span>
+            <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ================= AUTH MODALS ================= -->
+
+  <!-- LOGIN MODAL -->
+  <div id="login-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-in fade-in duration-200">
+      
+      <!-- Close button -->
+      <button onclick="closeLoginModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-800 p-1.5 rounded-xl hover:bg-slate-100 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-2xl mx-auto mb-3 filter drop-shadow-[0_4px_12px_rgba(168,85,247,0.3)]">
+          <img src="/static/images/belzora-icon.svg" alt="Belzora AI" class="w-full h-full object-contain">
+        </div>
+        <h3 class="font-display font-black text-2xl text-slate-900">Welcome Back</h3>
+        <p class="text-xs text-slate-500 font-medium mt-1">Sign in to your Belzora Studio account</p>
+      </div>
+
+      <!-- Quick 1-Click Demo Login Banner -->
+      <button onclick="quickDemoLogin()" class="w-full py-2.5 px-4 mb-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-black flex items-center justify-center space-x-2 transition shadow-sm">
+        <i data-lucide="zap" class="w-4 h-4 fill-amber-500 text-amber-500"></i>
+        <span>1-Click Test Sign In (No Typing Needed!)</span>
+      </button>
+
+      <div class="flex items-center my-4">
+        <div class="flex-1 border-t border-slate-200"></div>
+        <span class="px-3 text-[10px] uppercase font-bold text-slate-400">or sign in with email</span>
+        <div class="flex-1 border-t border-slate-200"></div>
+      </div>
+
+      <!-- Form -->
+      <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+          <div class="relative">
+            <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="email" id="login-email" required placeholder="you@domain.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="login-password" required placeholder="••••••••" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div id="login-error-msg" class="hidden p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-bold"></div>
+
+        <button type="submit" id="login-submit-btn" class="btn-luminous-generate w-full py-3 rounded-xl font-display font-black text-xs shadow-lg shadow-pink-500/20 flex items-center justify-center space-x-2">
+          <span>Sign In to Belzora</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- Toggle to Signup -->
+      <p class="text-center text-xs text-slate-500 mt-6 font-medium">
+        Don't have an account yet? 
+        <button onclick="switchToSignup()" class="font-extrabold text-purple-600 hover:text-pink-600 transition underline ml-1">
+          Sign Up Free
+        </button>
+      </p>
+
+    </div>
+  </div>
+
+  <!-- SIGNUP MODAL -->
+  <div id="signup-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-in fade-in duration-200">
+      
+      <!-- Close button -->
+      <button onclick="closeSignupModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-800 p-1.5 rounded-xl hover:bg-slate-100 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-2xl mx-auto mb-3 filter drop-shadow-[0_4px_12px_rgba(168,85,247,0.3)]">
+          <img src="/static/images/belzora-icon.svg" alt="Belzora AI" class="w-full h-full object-contain">
+        </div>
+        <h3 class="font-display font-black text-2xl text-slate-900">Create Free Account</h3>
+        <p class="text-xs text-slate-500 font-medium mt-1">Get 150 daily generation credits immediately</p>
+      </div>
+
+      <!-- Free Gift Banner -->
+      <div class="p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl mb-4 flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
+          <i data-lucide="gift" class="w-4 h-4"></i>
+        </div>
+        <div class="text-xs">
+          <span class="font-black text-purple-800">150 Free Starter Tokens</span>
+          <p class="text-[10px] text-slate-500">Full access to 1024x1024 HD, 4K Upscale & Vision Remix</p>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form onsubmit="handleSignupSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Your Name</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="text" id="signup-name" required placeholder="Awais Creator" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+          <div class="relative">
+            <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="email" id="signup-email" required placeholder="creator@gmail.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Create Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="signup-password" minlength="4" required placeholder="At least 4 characters" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <!-- Avatar Choice -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Pick Creative Avatar</label>
+          <div class="grid grid-cols-5 gap-2" id="avatar-picker-grid">
+            <button type="button" onclick="selectAvatar(this, 'bottts-1')" class="avatar-select-btn p-1 rounded-xl border-2 border-purple-500 bg-purple-50">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Awais" class="w-8 h-8 rounded-lg mx-auto">
+            </button>
+            <button type="button" onclick="selectAvatar(this, 'bottts-2')" class="avatar-select-btn p-1 rounded-xl border border-slate-200 hover:border-purple-300">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Zack" class="w-8 h-8 rounded-lg mx-auto">
+            </button>
+            <button type="button" onclick="selectAvatar(this, 'bottts-3')" class="avatar-select-btn p-1 rounded-xl border border-slate-200 hover:border-purple-300">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Oracle" class="w-8 h-8 rounded-lg mx-auto">
+            </button>
+            <button type="button" onclick="selectAvatar(this, 'bottts-4')" class="avatar-select-btn p-1 rounded-xl border border-slate-200 hover:border-purple-300">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Neon" class="w-8 h-8 rounded-lg mx-auto">
+            </button>
+            <button type="button" onclick="selectAvatar(this, 'bottts-5')" class="avatar-select-btn p-1 rounded-xl border border-slate-200 hover:border-purple-300">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Cyber" class="w-8 h-8 rounded-lg mx-auto">
+            </button>
+          </div>
+        </div>
+
+        <div id="signup-error-msg" class="hidden p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-bold"></div>
+
+        <button type="submit" id="signup-submit-btn" class="btn-luminous-generate w-full py-3 rounded-xl font-display font-black text-xs shadow-lg shadow-pink-500/20 flex items-center justify-center space-x-2">
+          <span>Create My Free Account</span>
+          <i data-lucide="sparkle" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- Toggle to Login -->
+      <p class="text-center text-xs text-slate-500 mt-6 font-medium">
+        Already registered? 
+        <button onclick="switchToLogin()" class="font-extrabold text-purple-600 hover:text-pink-600 transition underline ml-1">
+          Sign In
+        </button>
+      </p>
+
+    </div>
+  </div>
+
+  <!-- CLIENT SCRIPT -->
+  <script>
+    let selectedAvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Awais";
+
+    const HERO_SAMPLES = [
+      {
+        prompt: "A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render",
+        model: "SDXL-Lightning HD",
+        speed: "14.2s (Zero Quota)",
+        res: "1024 × 1024 Native HD",
+        quality: "PhotoReal High Dynamic",
+        img: "/outputs/img_1793695292977.png",
+        fallback: "/outputs/img_1793690978988.webp"
+      },
+      {
+        prompt: "A majestic cybernetic white tiger with golden mechanical engravings, prowling in a foggy bamboo forest, volumetric sunlight, 35mm lens",
+        model: "FLUX.1-schnell",
+        speed: "12.8s (ZeroGPU)",
+        res: "1024 × 1024 Native HD",
+        quality: "Neural Detail Ultra",
+        img: "/outputs/img_var_1793691840943_0.webp",
+        fallback: "/outputs/img_1793690649343.webp"
+      },
+      {
+        prompt: "Close-up portrait of an elven queen with emerald crown, bioluminescent flora woven in her hair, photorealistic skin texture, 8k",
+        model: "4K Super-Resolution",
+        speed: "15.4s (High Res)",
+        res: "2048 × 2048 UHD",
+        quality: "Texture Restored 4K",
+        img: "/outputs/upscaled_img_1793690649343.webp",
+        fallback: "/outputs/img_1793690534873.webp"
+      },
+      {
+        prompt: "A vintage retro sports car racing along a neon synthwave highway toward a colossal digital sun, vaporwave aesthetic, 4k",
+        model: "SDXL-Lightning HD",
+        speed: "8.1s (Ultra Fast)",
+        res: "1024 × 1024 Native HD",
+        quality: "Vibrant Cinematic Tone",
+        img: "/outputs/img_1793690534873.webp",
+        fallback: "/outputs/img_1793689150853.webp"
+      }
+    ];
+
+    let pendingStudioPrompt = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Owner & Local Auto-Login (Awais Creator Instant Pass)
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const hasOwnerKey = window.location.search.includes('owner=awais') || window.location.search.includes('creator=1');
+
+      let stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+      if (!stored && (isLocal || hasOwnerKey)) {
+        const creatorUser = {
+          id: "usr_demo_01",
+          name: "Awais Ahmad Bhatti (Creator)",
+          email: "demo@belzora.ai",
+          avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Awais",
+          tokens: 150
+        };
+        localStorage.setItem('belzora_user', JSON.stringify(creatorUser));
+        localStorage.setItem('pixora_user', JSON.stringify(creatorUser));
+      }
+
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+      checkAuthStatus();
+
+      // Check if redirected from Studio because not logged in
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('auth') === 'required') {
+        const p = params.get('prompt');
+        if (p) pendingStudioPrompt = decodeURIComponent(p);
+        openLoginModal();
+        const errorMsg = document.getElementById('login-error-msg');
+        if (errorMsg) {
+          errorMsg.textContent = "🔒 Please sign in to enter Belzora AI Studio (or 1-Click Demo Sign In).";
+          errorMsg.className = "mb-4 p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-bold text-center block";
+        }
+      }
+    });
+
+    function checkAuthStatus() {
+      const stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+      const guestView = document.getElementById('nav-guest-view');
+      const userView = document.getElementById('nav-user-view');
+      const heroGuestView = document.getElementById('hero-guest-view');
+      const heroLoggedInView = document.getElementById('hero-logged-in-view');
+
+      if (stored) {
+        try {
+          const user = JSON.parse(stored);
+          if (guestView) guestView.classList.add('hidden');
+          if (userView) {
+            userView.classList.remove('hidden');
+            const nameEl = document.getElementById('nav-user-name');
+            const tokenEl = document.getElementById('nav-token-display');
+            const avatarEl = document.getElementById('nav-user-avatar');
+            if (nameEl) nameEl.textContent = user.name || "Creator";
+            if (tokenEl) tokenEl.textContent = user.tokens ?? 150;
+            if (avatarEl && user.avatar) avatarEl.src = user.avatar;
+          }
+
+          // Adapt Hero CTAs
+          if (heroGuestView) heroGuestView.classList.add('hidden');
+          if (heroLoggedInView) {
+            heroLoggedInView.classList.remove('hidden');
+            const heroNameEl = document.getElementById('hero-welcome-username');
+            if (heroNameEl) heroNameEl.textContent = user.name || "Creator";
+          }
+
+          // Adapt Pricing CTAs
+          const starterBtn = document.getElementById('pricing-starter-btn');
+          const proBtn = document.getElementById('pricing-pro-btn');
+          if (starterBtn) {
+            starterBtn.textContent = "✓ Current Plan Active (150 Tokens/Day)";
+            starterBtn.className = "w-full py-3.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 font-bold text-xs cursor-default";
+            starterBtn.onclick = null;
+          }
+          if (proBtn) {
+            proBtn.innerHTML = '<span>🚀 Enter Studio (Pro Beta Active)</span>';
+            proBtn.onclick = () => window.location.href = '/studio';
+          }
+
+          // Adapt Bottom Banner CTA
+          const bCtaGuest = document.getElementById('bottom-cta-guest');
+          const bCtaUser = document.getElementById('bottom-cta-user');
+          if (bCtaGuest) bCtaGuest.classList.add('hidden');
+          if (bCtaUser) bCtaUser.classList.remove('hidden');
+        } catch (e) {
+          console.error("Auth parse error:", e);
+        }
+      } else {
+        if (guestView) guestView.classList.remove('hidden');
+        if (userView) userView.classList.add('hidden');
+        if (heroGuestView) heroGuestView.classList.remove('hidden');
+        if (heroLoggedInView) heroLoggedInView.classList.add('hidden');
+
+        // Reset Bottom Banner CTA
+        const bCtaGuest = document.getElementById('bottom-cta-guest');
+        const bCtaUser = document.getElementById('bottom-cta-user');
+        if (bCtaGuest) bCtaGuest.classList.remove('hidden');
+        if (bCtaUser) bCtaUser.classList.add('hidden');
+
+        // Reset Pricing CTAs
+        const starterBtn = document.getElementById('pricing-starter-btn');
+        const proBtn = document.getElementById('pricing-pro-btn');
+        if (starterBtn) {
+          starterBtn.textContent = "Get Started Free";
+          starterBtn.className = "w-full py-3.5 rounded-xl border-2 border-slate-200 hover:border-purple-400 font-black text-xs text-slate-800 hover:text-purple-700 transition cursor-pointer";
+          starterBtn.onclick = () => openSignupModal();
+        }
+        if (proBtn) {
+          proBtn.innerHTML = '<span>Claim Free Pro Beta Access</span>';
+          proBtn.onclick = () => startFreeAction();
+        }
+      }
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    }
+
+    function fillHeroPrompt(vibeName, promptText) {
+      const input = document.getElementById('hero-prompt-input');
+      if (input) {
+        input.value = promptText;
+        input.focus();
+      }
+    }
+
+    function launchStudioWithHeroInput() {
+      const input = document.getElementById('hero-prompt-input');
+      const promptVal = input ? input.value.trim() : "";
+      goToStudio(promptVal || null);
+    }
+
+    function goToStudio(prompt = null) {
+      const stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+      if (stored) {
+        if (prompt) {
+          window.location.href = `/studio?prompt=${encodeURIComponent(prompt)}`;
+        } else {
+          window.location.href = '/studio';
+        }
+      } else {
+        pendingStudioPrompt = prompt;
+        openLoginModal();
+        const errorMsg = document.getElementById('login-error-msg');
+        if (errorMsg) {
+          errorMsg.textContent = "🔒 Please sign in to enter Belzora AI Studio (or create a free account for 150 starter tokens).";
+          errorMsg.className = "mb-4 p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 text-xs font-bold text-center block";
+        }
+      }
+    }
+
+    function goToStudioFromHero() {
+      const text = document.getElementById('hero-prompt-text');
+      const promptVal = text ? text.textContent.trim() : null;
+      goToStudio(promptVal);
+    }
+
+    function setHeroSample(index) {
+      const sample = HERO_SAMPLES[index];
+      if (!sample) return;
+
+      document.querySelectorAll('.hero-chip').forEach((chip, i) => {
+        if (i === index) {
+          chip.className = "hero-chip px-3.5 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 text-xs font-extrabold shadow-sm active";
+        } else {
+          chip.className = "hero-chip px-3.5 py-1.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-xs font-extrabold hover:bg-slate-100 transition shadow-sm";
+        }
+      });
+
+      const img = document.getElementById('hero-preview-img');
+      const text = document.getElementById('hero-prompt-text');
+      const tag = document.getElementById('hero-model-tag');
+      const speed = document.getElementById('hero-speed-val');
+      const res = document.getElementById('hero-res-val');
+      const quality = document.getElementById('hero-quality-val');
+
+      if (img) {
+        img.src = sample.img;
+        img.onerror = () => { img.src = sample.fallback; };
+      }
+      if (text) text.textContent = sample.prompt;
+      if (tag) tag.textContent = sample.model;
+      if (speed) speed.textContent = sample.speed;
+      if (res) res.textContent = sample.res;
+      if (quality) quality.textContent = sample.quality;
+    }
+
+    function copyHeroPrompt() {
+      const textEl = document.getElementById('hero-prompt-text');
+      if (textEl) {
+        navigator.clipboard.writeText(textEl.textContent.trim());
+        const toast = document.getElementById('hero-copy-toast');
+        if (toast) {
+          toast.classList.remove('hidden');
+          setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+      }
+    }
+
+    /* Bento Feature Interactive Demos */
+    function toggleBentoEngine(type) {
+      const fluxBtn = document.getElementById('bento-engine-flux');
+      const sdxlBtn = document.getElementById('bento-engine-sdxl');
+      const specs = document.getElementById('bento-engine-specs');
+      if (type === 'flux') {
+        fluxBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-black bg-white text-purple-700 shadow-sm transition";
+        sdxlBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+        specs.innerHTML = `
+          <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Speed:</span> <b class="text-purple-700">14.2s (ZeroGPU)</b></div>
+          <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Quality:</span> <b class="text-slate-800">Ultra-Realistic Skin & Pores</b></div>
+          <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Native Output:</span> <b class="text-slate-800">1024 × 1024 PNG</b></div>
+        `;
+      } else {
+        sdxlBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-black bg-white text-purple-700 shadow-sm transition";
+        fluxBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+        specs.innerHTML = `
+          <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Speed:</span> <b class="text-emerald-600">7.8s (Lightning Fast)</b></div>
+          <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Quality:</span> <b class="text-slate-800">Cinematic Lighting & Depth</b></div>
+          <div class="flex justify-between text-[11px]"><span class="text-slate-500 font-semibold">Native Output:</span> <b class="text-slate-800">1024 × 1024 PNG</b></div>
+        `;
+      }
+    }
+
+    let isVisionRemixed = true;
+    function toggleVisionSample() {
+      const img = document.getElementById('bento-vision-img');
+      const badge = document.getElementById('bento-vision-badge');
+      if (isVisionRemixed) {
+        img.src = "/outputs/img_1793690649343.webp";
+        badge.textContent = "📷 Original Reference Subject";
+        badge.className = "absolute bottom-2 left-2 bg-slate-900 text-white text-[9px] font-black px-2 py-0.5 rounded-md backdrop-blur-md shadow";
+        isVisionRemixed = false;
+      } else {
+        img.src = "/outputs/img_var_1793691840943_0.webp";
+        badge.textContent = "✨ Remixed: Cyber White Tiger";
+        badge.className = "absolute bottom-2 left-2 bg-pink-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md backdrop-blur-md shadow";
+        isVisionRemixed = true;
+      }
+    }
+
+    function updateBentoScale(val) {
+      const label = document.getElementById('bento-scale-label');
+      if (label) {
+        label.textContent = val == '2' ? '4K UHD (2048px)' : '1024px Native HD';
+      }
+    }
+
+    function injectBentoTag(tag) {
+      const display = document.getElementById('bento-tag-display');
+      if (display) {
+        display.textContent = `Sample: Portrait of an astronaut, ${tag}, octane render, 8k`;
+      }
+    }
+
+    function openLoginModal() {
+      document.getElementById('login-modal').classList.remove('hidden');
+      document.getElementById('login-error-msg').classList.add('hidden');
+    }
+
+    function closeLoginModal() {
+      document.getElementById('login-modal').classList.add('hidden');
+    }
+
+    function openSignupModal() {
+      document.getElementById('signup-modal').classList.remove('hidden');
+      document.getElementById('signup-error-msg').classList.add('hidden');
+    }
+
+    function closeSignupModal() {
+      document.getElementById('signup-modal').classList.add('hidden');
+    }
+
+    function switchToSignup() {
+      closeLoginModal();
+      openSignupModal();
+    }
+
+    function switchToLogin() {
+      closeSignupModal();
+      openLoginModal();
+    }
+
+    function selectAvatar(btn, seed) {
+      document.querySelectorAll('.avatar-select-btn').forEach(b => {
+        b.className = "avatar-select-btn p-1 rounded-xl border border-slate-200 hover:border-purple-300";
+      });
+      btn.className = "avatar-select-btn p-1 rounded-xl border-2 border-purple-500 bg-purple-50";
+      const img = btn.querySelector('img');
+      if (img) selectedAvatarUrl = img.src;
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const errorMsg = document.getElementById('login-error-msg');
+      const submitBtn = document.getElementById('login-submit-btn');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Signing In...";
+      errorMsg.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || "Invalid login credentials");
+        }
+
+        localStorage.setItem('belzora_user', JSON.stringify(data.user));
+        localStorage.setItem('pixora_user', JSON.stringify(data.user));
+        checkAuthStatus();
+        closeLoginModal();
+        if (pendingStudioPrompt) {
+          window.location.href = `/studio?prompt=${encodeURIComponent(pendingStudioPrompt)}`;
+        } else {
+          window.location.href = '/studio';
+        }
+      } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Sign In to Belzora";
+      }
+    }
+
+    async function handleSignupSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('signup-name').value;
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      const errorMsg = document.getElementById('signup-error-msg');
+      const submitBtn = document.getElementById('signup-submit-btn');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Creating Account...";
+      errorMsg.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            avatar: selectedAvatarUrl
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || "Could not complete signup");
+        }
+
+        localStorage.setItem('belzora_user', JSON.stringify(data.user));
+        localStorage.setItem('pixora_user', JSON.stringify(data.user));
+        checkAuthStatus();
+        closeSignupModal();
+        if (pendingStudioPrompt) {
+          window.location.href = `/studio?prompt=${encodeURIComponent(pendingStudioPrompt)}`;
+        } else {
+          window.location.href = '/studio';
+        }
+      } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Create My Free Account";
+      }
+    }
+
+    async function quickDemoLogin() {
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: "demo@belzora.ai", password: "belzora123" })
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('belzora_user', JSON.stringify(data.user));
+          localStorage.setItem('pixora_user', JSON.stringify(data.user));
+          checkAuthStatus();
+          closeLoginModal();
+          if (pendingStudioPrompt) {
+            window.location.href = `/studio?prompt=${encodeURIComponent(pendingStudioPrompt)}`;
+          } else {
+            window.location.href = '/studio';
+          }
+        }
+      } catch (e) {
+        // Fallback local mock
+        const mockUser = {
+          id: "usr_demo_01",
+          name: "Awais Ahmad Bhatti (Creator)",
+          email: "demo@belzora.ai",
+          avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Awais",
+          tokens: 150
+        };
+        localStorage.setItem('belzora_user', JSON.stringify(mockUser));
+        localStorage.setItem('pixora_user', JSON.stringify(mockUser));
+        if (pendingStudioPrompt) {
+          window.location.href = `/studio?prompt=${encodeURIComponent(pendingStudioPrompt)}`;
+        } else {
+          window.location.href = '/studio';
+        }
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('belzora_user');
+      localStorage.removeItem('pixora_user');
+      checkAuthStatus();
+    }
+
+    function startFreeAction() {
+      const stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+      if (stored) {
+        window.location.href = '/studio';
+      } else {
+        openSignupModal();
+      }
+    }
+
+    function toggleFaq(btn) {
+      const content = btn.nextElementSibling;
+      const icon = btn.querySelector('[data-lucide="chevron-down"]');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        if (icon) icon.classList.add('rotate-180');
+      } else {
+        content.classList.add('hidden');
+        if (icon) icon.classList.remove('rotate-180');
+      }
+    }
+  </script>
+</body>
+</html>

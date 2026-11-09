@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Belzora AI</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/images/belzora-icon.svg">
+  <link rel="icon" type="image/png" href="/static/images/belzora-icon.png">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/static/css/style.css?v=25.0">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex font-sans selection:bg-pink-500 selection:text-white relative">
+
+  <!-- RADIANT MULTI-COLOR AMBIENT MESH (NO BLACK) -->
+  <div class="luminous-mesh"></div>
+  <div class="orb-glow-1"></div>
+  <div class="orb-glow-2"></div>
+
+  <!-- 1. LEFT ICON NAVIGATION BAR -->
+  <aside class="luminous-sidebar w-16 md:w-20 flex-shrink-0 flex flex-col items-center justify-between py-4 border-r border-slate-200 sticky top-0 h-screen z-30 shadow-sm">
+    <!-- Top: Logo & Navigation Icons -->
+    <div class="flex flex-col items-center space-y-6 w-full">
+      <!-- Belzora AI Official Logo -->
+      <a href="/" title="Go to Home Page" class="relative flex items-center justify-center w-12 h-12 rounded-2xl group transition transform hover:scale-105">
+        <img src="/static/images/belzora-icon.svg" alt="Belzora AI" class="w-full h-full object-contain filter drop-shadow-[0_4px_12px_rgba(168,85,247,0.35)]">
+      </a>
+
+      <!-- Navigation Icons -->
+      <nav class="flex flex-col items-center space-y-3 w-full px-2">
+        <a href="/" title="Back to Home Page" class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-purple-600 hover:bg-purple-50">
+          <i data-lucide="home" class="w-5 h-5 text-slate-600"></i>
+          <span class="text-[9px] font-bold mt-0.5">Home</span>
+        </a>
+
+        <button onclick="switchLeonardoTab('image')" id="nav-image-btn" title="AI Image Generation" class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-purple-600 via-pink-500 to-purple-500 text-white shadow-md shadow-pink-500/30">
+          <i data-lucide="image" class="w-5 h-5 text-white"></i>
+          <span class="text-[9px] font-extrabold mt-0.5">Images</span>
+        </button>
+
+        <button onclick="switchLeonardoTab('video')" id="nav-video-btn" title="Motion 2.0 (Video Generation)" class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-slate-900 hover:bg-slate-100">
+          <i data-lucide="film" class="w-5 h-5 text-cyan-500"></i>
+          <span class="text-[9px] font-bold mt-0.5">Motion</span>
+        </button>
+
+        <button onclick="toggleTagDrawer()" title="Creative Prompt Builder Library" class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-purple-600 hover:bg-purple-50 border border-transparent hover:border-purple-200">
+          <i data-lucide="tags" class="w-5 h-5 text-purple-500"></i>
+          <span class="text-[9px] font-bold mt-0.5">Tags</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Bottom: Tokens Bar & Settings -->
+    <div class="flex flex-col items-center space-y-4 w-full px-2">
+      <!-- Token Balance Pill -->
+      <div class="w-full bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-2 text-center shadow-sm cursor-pointer hover:border-amber-400 transition" title="Active High-Speed Compute">
+        <div class="flex items-center justify-center space-x-1 text-amber-600 text-xs font-black">
+          <i data-lucide="zap" class="w-3.5 h-3.5 fill-amber-500 text-amber-500"></i>
+          <span id="token-count">PRO</span>
+        </div>
+        <div class="w-full h-1.5 bg-amber-200/60 rounded-full mt-1.5 overflow-hidden">
+          <div class="w-full h-full bg-gradient-to-r from-amber-500 to-pink-500 rounded-full"></div>
+        </div>
+      </div>
+
+      <!-- Settings / API Key Button -->
+      <button onclick="openSettingsModal()" title="Settings & Token Configuration" class="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition border border-slate-200 shadow-sm">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+      </button>
+
+      <!-- User Avatar / Profile -->
+      <a href="/" id="sidebar-user-avatar-box" title="View Profile / Home" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-500 to-pink-500 p-[2px] shadow-sm block overflow-hidden hover:scale-105 transition">
+        <img id="sidebar-user-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=Awais" class="w-full h-full bg-white rounded-[9px] object-cover">
+      </a>
+
+      <!-- Sign Out / Exit to Home -->
+      <button onclick="logoutFromStudio()" title="Sign Out of Studio" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-slate-200 shadow-sm cursor-pointer">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- 2. LEFT SETTINGS CONFIGURATION RAIL (LEONARDO CONTROLS) -->
+  <aside id="leo-settings-rail" class="luminous-rail w-72 md:w-80 flex-shrink-0 flex flex-col sticky top-0 h-screen border-r border-slate-200 overflow-y-auto z-20 shadow-sm">
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-white/70">
+      <div class="flex items-center space-x-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse"></span>
+        <h2 id="rail-title" class="font-display font-black text-sm text-slate-900 uppercase tracking-wider">Image Settings</h2>
+      </div>
+      <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">BELZORA PRO</span>
+    </div>
+
+    <div class="p-4 space-y-5 flex-1">
+      
+      <!-- Number of Images Selector (1, 2, 3, 4) -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-2">Number of Images (Batch Mode)</label>
+        <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+          <button onclick="selectBatchCount(1)" data-count="1" class="batch-btn py-1.5 rounded-xl text-xs font-bold bg-white text-purple-700 shadow-sm border border-slate-200">1</button>
+          <button onclick="selectBatchCount(2)" data-count="2" class="batch-btn py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900">2</button>
+          <button onclick="selectBatchCount(3)" data-count="3" class="batch-btn py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900">3</button>
+          <button onclick="selectBatchCount(4)" data-count="4" class="batch-btn py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900">4</button>
+        </div>
+      </div>
+
+      <!-- PhotoReal Toggle -->
+      <div class="bg-white border border-slate-200/80 rounded-2xl p-3.5 flex items-center justify-between shadow-sm">
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-xs font-extrabold text-slate-900">PhotoReal v2</span>
+            <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-extrabold border border-amber-300">RAW</span>
+          </div>
+          <p class="text-[10px] text-slate-500 mt-0.5">Hyper-realistic lighting & photography</p>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="photoreal-toggle" class="sr-only switch-checkbox" checked>
+          <div class="switch-label w-11 h-6 bg-slate-200 rounded-full transition-colors relative p-0.5 shadow-inner">
+            <div class="switch-dot w-5 h-5 bg-white rounded-full transition-transform shadow-sm"></div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Input Dimensions & Aspect Ratio -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold text-slate-700">Aspect Ratio & Resolution</label>
+          <span id="dimension-display" class="text-xs font-black text-purple-700">1024 × 1024</span>
+        </div>
+        <div class="grid grid-cols-4 gap-2">
+          <button onclick="setDimension('1:1', '1024 × 1024')" data-ratio="1:1" class="ratio-pill active-ratio p-2.5 rounded-2xl border border-purple-500 bg-purple-50 text-purple-700 flex flex-col items-center justify-center transition shadow-sm">
+            <div class="w-4 h-4 border-2 border-purple-500 rounded-sm mb-1"></div>
+            <span class="text-[11px] font-extrabold">1:1</span>
+          </button>
+          <button onclick="setDimension('16:9', '1280 × 720')" data-ratio="16:9" class="ratio-pill p-2.5 rounded-2xl border border-slate-200 bg-white text-slate-600 hover:border-purple-300 transition flex flex-col items-center justify-center shadow-sm">
+            <div class="w-5 h-3 border-2 border-slate-400 rounded-sm mb-1"></div>
+            <span class="text-[11px] font-bold">16:9</span>
+          </button>
+          <button onclick="setDimension('9:16', '720 × 1280')" data-ratio="9:16" class="ratio-pill p-2.5 rounded-2xl border border-slate-200 bg-white text-slate-600 hover:border-purple-300 transition flex flex-col items-center justify-center shadow-sm">
+            <div class="w-3 h-5 border-2 border-slate-400 rounded-sm mb-1"></div>
+            <span class="text-[11px] font-bold">9:16</span>
+          </button>
+          <button onclick="setDimension('4:3', '1024 × 768')" data-ratio="4:3" class="ratio-pill p-2.5 rounded-2xl border border-slate-200 bg-white text-slate-600 hover:border-purple-300 transition flex flex-col items-center justify-center shadow-sm">
+            <div class="w-4 h-3.5 border-2 border-slate-400 rounded-sm mb-1"></div>
+            <span class="text-[11px] font-bold">4:3</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Image Guidance / Image-to-Image Dropzone -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold text-slate-700">Image-to-Image (Remix Photo)</label>
+          <span id="img2img-badge" class="hidden text-[9px] font-black px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">ACTIVE</span>
+        </div>
+        <div onclick="triggerFileUpload()" class="border-2 border-dashed border-slate-300 hover:border-pink-500 rounded-2xl p-4 text-center cursor-pointer transition bg-white group shadow-sm">
+          <input type="file" id="source-file-input" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+          <div id="upload-placeholder" class="flex flex-col items-center">
+            <i data-lucide="image-plus" class="w-7 h-7 text-slate-400 group-hover:text-pink-500 transition mb-1"></i>
+            <p class="text-xs text-slate-700 font-bold">Drop Photo to Remix</p>
+            <p class="text-[10px] text-slate-400">Transform Face, Pose or Style</p>
+          </div>
+          <div id="upload-preview-container" class="hidden relative inline-block">
+            <img id="upload-preview-img" class="h-28 rounded-xl object-cover mx-auto border-2 border-pink-400 shadow-md">
+            <button onclick="removeUploadedImage(event)" class="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1 hover:bg-rose-600 transition shadow">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Vision Recognition Box -->
+        <div id="upload-analysis-container" class="hidden mt-2 p-2.5 bg-purple-50 rounded-xl border border-purple-200 text-left transition">
+          <div class="flex items-center space-x-1.5 text-[11px] font-extrabold text-purple-800 mb-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-600"></i>
+            <span>AI Vision Recognized:</span>
+          </div>
+          <p id="upload-analysis-text" class="text-[10px] text-slate-700 leading-relaxed font-medium italic"></p>
+        </div>
+
+        <!-- Guidance Strength Slider -->
+        <div id="guidance-slider-container" class="hidden mt-2 text-left bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-600 mb-1">
+            <span>Remix Influence</span>
+            <span id="strength-val" class="text-purple-700 font-black">70%</span>
+          </div>
+          <input type="range" id="guidance-strength" min="30" max="95" value="70" oninput="document.getElementById('strength-val').textContent = this.value + '%'" class="w-full accent-purple-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
+        </div>
+      </div>
+
+      <!-- Negative Prompt -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">Negative Prompt (Exclude)</label>
+        <textarea id="negative-prompt" rows="2" placeholder="blurry, distorted, ugly, low resolution, watermark..." class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500 resize-none shadow-sm"></textarea>
+      </div>
+
+      <!-- Creator Credit Badge -->
+      <div class="pt-3 border-t border-slate-200/80 text-center">
+        <div class="inline-flex items-center space-x-1 px-3 py-1 rounded-xl bg-purple-50/80 text-[10px] text-purple-800 font-bold border border-purple-200 shadow-sm">
+          <span>Engineered by</span>
+          <span class="font-extrabold text-purple-900">Awais Ahmad Bhatti</span>
+          <span class="text-[8px] font-black px-1 rounded bg-purple-200/80 text-purple-800 ml-0.5">CREATOR</span>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- 3. MAIN WORKSPACE & GENERATIONS FEED -->
+  <main class="flex-1 min-w-0 min-h-screen flex flex-col bg-transparent relative">
+
+    <!-- FLOATING TOP COMMAND CENTER (PROMPT & MODEL BAR) -->
+    <div class="luminous-prompt-bar p-4 z-10 sticky top-0">
+      
+      <!-- Top Row: Prompt Box & Action Buttons -->
+      <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+        
+        <!-- Prompt Box -->
+        <div class="flex-1 relative flex items-center bg-white rounded-2xl border-2 border-slate-200 focus-within:border-purple-500 transition px-4 py-2 shadow-sm">
+          <i data-lucide="sparkles" class="w-5 h-5 text-purple-600 mr-3 flex-shrink-0"></i>
+          <input type="text" id="prompt-input" placeholder="Type a prompt (e.g. A hyper-detailed portrait of an ancient cosmic oracle with glowing violet eyes, 8k, photoreal)..." class="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium">
+          
+          <div class="flex items-center space-x-1.5 ml-2">
+            <!-- Magic Prompt / AI Enhance -->
+            <button onclick="enhanceCurrentPrompt()" id="enhance-btn" title="Enhance with Prompt Magic" class="p-2 rounded-xl text-cyan-600 hover:bg-cyan-50 transition border border-cyan-200">
+              <i data-lucide="wand-2" class="w-4 h-4"></i>
+            </button>
+            <!-- Random Dice -->
+            <button onclick="randomPrompt()" title="Surprise Me (Random Prompt)" class="p-2 rounded-xl text-amber-600 hover:bg-amber-50 transition border border-amber-200">
+              <i data-lucide="dices" class="w-4 h-4"></i>
+            </button>
+            <!-- Clear -->
+            <button onclick="clearPrompt()" title="Clear Prompt" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 transition">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Big Luminous Generate Button -->
+        <button id="generate-btn" onclick="startGeneration()" class="btn-luminous-generate px-8 py-3 rounded-2xl font-display font-extrabold text-sm tracking-wide flex items-center justify-center space-x-3 flex-shrink-0 cursor-pointer">
+          <i data-lucide="sparkle" class="w-4 h-4"></i>
+          <span id="generate-btn-text">Generate</span>
+          <div class="flex items-center space-x-1 bg-white/20 px-2 py-0.5 rounded-lg text-xs font-black border border-white/30">
+            <i data-lucide="zap" class="w-3.5 h-3.5 fill-amber-300 text-amber-300"></i>
+            <span id="gen-token-cost">4</span>
+          </div>
+        </button>
+
+      </div>
+
+      <!-- PROMPT BUILDER TAGS LIBRARY (Collapsible / Toggleable) -->
+      <div id="prompt-tags-drawer" class="mt-3 pt-3 border-t border-slate-200/80 text-xs flex flex-wrap items-center gap-2">
+        <span class="text-slate-500 font-bold text-[11px] flex items-center mr-1">
+          <i data-lucide="wand" class="w-3 h-3 mr-1 text-purple-600"></i> Quick Tags:
+        </span>
+        <!-- Lighting Chips -->
+        <button onclick="addPromptTag('golden hour lighting, warm sunlight')" class="px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-semibold transition">+ ☀️ Golden Hour</button>
+        <button onclick="addPromptTag('studio softbox lighting, high dynamic range')" class="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-semibold transition">+ 💡 Studio Light</button>
+        <button onclick="addPromptTag('volumetric fog, atmospheric mist')" class="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-semibold transition">+ 🌫️ Volumetric Mist</button>
+        <button onclick="addPromptTag('cyberpunk neon glow, cyan and magenta reflections')" class="px-2.5 py-1 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 font-semibold transition">+ ⚡ Neon Glow</button>
+        <!-- Camera Chips -->
+        <button onclick="addPromptTag('shot on 85mm f/1.4 lens, shallow depth of field')" class="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold transition">+ 📸 85mm Portrait</button>
+        <button onclick="addPromptTag('macro lens extreme close-up detail')" class="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-semibold transition">+ 🔍 Macro</button>
+        <!-- Engine Chips -->
+        <button onclick="addPromptTag('Unreal Engine 5 render, photoreal perfection, 8k')" class="px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-semibold transition">+ 🎮 Unreal Engine 5</button>
+        <button onclick="addPromptTag('award winning masterpiece photography')" class="px-2.5 py-1 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-800 border border-pink-200 font-semibold transition">+ 🏆 Masterpiece</button>
+      </div>
+
+      <!-- Second Row: Fine-tuned Model Dropdown & Style Elements -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-200/80 text-xs">
+        
+        <div class="flex items-center space-x-3">
+          <!-- Fine-Tuned Model Selector -->
+          <div class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-slate-500 font-bold">Model:</span>
+            <select id="model-select" class="bg-transparent text-purple-700 font-extrabold focus:outline-none cursor-pointer">
+              <option value="sdxl" selected>⚡ Belzora Vision XL (SDXL-Lightning • 3s Turbo & Sharp Faces)</option>
+              <option value="flux-dev">💎 Belzora Kino XL (FLUX.1 Dev • Ultra Photorealistic 28-Step)</option>
+              <option value="flux-schnell">🚀 Belzora Phoenix (FLUX.1 Schnell • 1024 HD)</option>
+            </select>
+          </div>
+
+          <!-- Add Elements (LoRA Style Presets) -->
+          <div class="hidden sm:flex items-center space-x-1.5" id="style-pills">
+            <span class="text-slate-500 font-bold">Style:</span>
+            <button onclick="selectStylePreset('Photorealistic')" data-style="Photorealistic" class="style-pill active-style px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold shadow-sm">📸 Photoreal</button>
+            <button onclick="selectStylePreset('Cinematic')" data-style="Cinematic" class="style-pill px-3 py-1 rounded-xl bg-white text-slate-700 hover:border-amber-400 border border-slate-200 font-bold shadow-sm">🍿 Cinematic</button>
+            <button onclick="selectStylePreset('Anime / Manga')" data-style="Anime / Manga" class="style-pill px-3 py-1 rounded-xl bg-white text-slate-700 hover:border-pink-400 border border-slate-200 font-bold shadow-sm">🌸 Anime</button>
+            <button onclick="selectStylePreset('Cyberpunk')" data-style="Cyberpunk" class="style-pill px-3 py-1 rounded-xl bg-white text-slate-700 hover:border-cyan-400 border border-slate-200 font-bold shadow-sm">🏙️ Cyberpunk</button>
+            <button onclick="selectStylePreset('3D Disney / Pixar')" data-style="3D Disney / Pixar" class="style-pill px-3 py-1 rounded-xl bg-white text-slate-700 hover:border-purple-400 border border-slate-200 font-bold shadow-sm">🎨 3D Pixar</button>
+          </div>
+        </div>
+
+        <!-- Filter & View options (With Starred Favorites) -->
+        <div class="flex items-center space-x-2">
+          <span class="text-slate-500 font-bold text-[11px]">Filter:</span>
+          <button onclick="filterGallery('all')" data-filter="all" class="feed-filter-btn px-3 py-1 rounded-xl bg-purple-100 text-purple-800 border border-purple-300 font-black text-xs shadow-sm">All</button>
+          <button onclick="filterGallery('favorite')" data-filter="favorite" class="feed-filter-btn px-3 py-1 rounded-xl bg-white text-amber-600 hover:text-amber-700 border border-slate-200 text-xs font-bold shadow-sm flex items-center space-x-1">
+            <span>⭐ Starred</span>
+          </button>
+          <button onclick="filterGallery('image')" data-filter="image" class="feed-filter-btn px-3 py-1 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold shadow-sm">Images</button>
+          <button onclick="filterGallery('video')" data-filter="video" class="feed-filter-btn px-3 py-1 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold shadow-sm">Videos</button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- MAIN GENERATIONS FEED -->
+    <div id="leo-gallery-feed" class="flex-1 p-6 relative">
+      
+      <!-- Generating Active Status Banner -->
+      <div id="generating-card" class="hidden mb-6 bg-gradient-to-r from-purple-50 via-pink-50 to-cyan-50 border-2 border-pink-300 rounded-3xl p-6 shadow-xl relative overflow-hidden backdrop-blur-xl">
+        <div class="luminous-scanner-line"></div>
+        <div class="flex items-center space-x-4">
+          <div class="relative w-14 h-14 rounded-2xl bg-white flex items-center justify-center border border-pink-300 shadow-md">
+            <i data-lucide="sparkles" class="w-7 h-7 text-pink-600 animate-spin" style="animation-duration: 3s;"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between mb-1">
+              <h3 id="gen-status-title" class="font-display font-black text-base text-slate-900">Synthesizing Belzora PhotoReal Latents...</h3>
+              <span id="gen-progress-percent" class="text-sm font-black text-pink-600">35%</span>
+            </div>
+            <p id="gen-status-sub" class="text-xs text-slate-600 mb-2.5">Evaluating neural guidance and upscaling textures</p>
+            <div class="w-full h-2.5 bg-white rounded-full overflow-hidden border border-slate-200 p-[1px] shadow-inner">
+              <div id="gen-progress-fill" class="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-full w-1/3 transition-all duration-300"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid of Generations -->
+      <div id="leo-gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+        <!-- Rendered items populate here -->
+      </div>
+
+      <!-- Empty State if no creations -->
+      <div id="empty-state" class="hidden flex flex-col items-center justify-center text-center py-24">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-100 to-pink-100 border-2 border-purple-200 flex items-center justify-center mb-4 text-purple-600 shadow-lg">
+          <i data-lucide="image" class="w-10 h-10"></i>
+        </div>
+        <h3 class="font-display font-black text-xl text-slate-900 mb-2">No Generations Yet</h3>
+        <p class="text-xs text-slate-500 max-w-sm mb-6 font-medium">Type an imaginative prompt in the top bar or click "Surprise Me" to create your first artwork.</p>
+        <button onclick="randomPrompt(); startGeneration();" class="btn-luminous-generate px-6 py-2.5 rounded-xl font-bold text-xs text-white">Generate Sample</button>
+      </div>
+
+    </div>
+
+    <!-- Single Smart Floating Scroll Button (Side Icon that expands on hover) -->
+    <div class="fixed bottom-6 right-8 z-30">
+      <button id="smart-scroll-btn" onclick="handleSmartScroll()" title="Scroll Down" class="group flex items-center justify-center p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 text-slate-800 hover:text-purple-600 hover:border-purple-300 shadow-xl transition-all duration-300 hover:shadow-2xl cursor-pointer">
+        <span id="smart-scroll-down-icon" class="flex items-center">
+          <i data-lucide="arrow-down" class="w-5 h-5 text-pink-500"></i>
+        </span>
+        <span id="smart-scroll-up-icon" class="hidden flex items-center">
+          <i data-lucide="arrow-up" class="w-5 h-5 text-purple-600"></i>
+        </span>
+        <span id="smart-scroll-text" class="max-w-0 opacity-0 group-hover:max-w-[120px] group-hover:opacity-100 group-hover:ml-2.5 overflow-hidden whitespace-nowrap text-xs font-black transition-all duration-300 ease-in-out">Scroll Down</span>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- 4. LEONARDO IMAGE INSPECTOR MODAL (PRO SUITE) -->
+  <div id="inspector-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col md:flex-row overflow-hidden shadow-2xl">
+      
+      <!-- Left: Media Viewport -->
+      <div class="flex-1 bg-slate-100 flex items-center justify-center p-4 relative min-h-[350px]">
+        <img id="inspector-img" src="" class="max-h-[80vh] max-w-full rounded-2xl object-contain shadow-2xl">
+        <video id="inspector-video" controls autoplay loop class="hidden max-h-[80vh] max-w-full rounded-2xl shadow-2xl">
+          <source src="" type="video/mp4">
+        </video>
+      </div>
+
+      <!-- Right: Generation Details & Action Rail -->
+      <div class="w-full md:w-96 p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-200 bg-white">
+        <div>
+          <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+            <span class="text-xs font-black text-purple-700 uppercase tracking-wider">Creation Details</span>
+            <div class="flex items-center space-x-2">
+              <button id="inspector-fav-btn" onclick="toggleInspectorFavorite()" title="Star / Favorite" class="p-1.5 rounded-xl hover:bg-slate-100 transition text-slate-400 hover:text-amber-500">
+                <i data-lucide="star" class="w-5 h-5"></i>
+              </button>
+              <button id="inspector-del-btn" onclick="deleteInspectorItem()" title="Delete Creation" class="p-1.5 rounded-xl hover:bg-rose-50 transition text-slate-400 hover:text-rose-600">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+              </button>
+              <button onclick="closeInspector()" class="text-slate-400 hover:text-slate-900 p-1">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-500 font-bold mb-1">Prompt</p>
+          <p id="inspector-prompt" class="text-sm text-slate-900 font-semibold mb-4 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200"></p>
+
+          <div class="space-y-2.5 text-xs text-slate-700">
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500 font-medium">Model:</span>
+              <span id="inspector-model" class="font-bold text-slate-900">FLUX.1-schnell</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500 font-medium">Resolution:</span>
+              <span id="inspector-ratio" class="font-bold text-slate-900">1024 × 1024</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-100">
+              <span class="text-slate-500 font-medium">Style:</span>
+              <span id="inspector-style" class="font-black text-emerald-700">Photoreal</span>
+            </div>
+          </div>
+
+          <!-- Reference Image Indicator in Inspector -->
+          <div id="inspector-ref-box" class="hidden mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center space-x-3">
+            <img id="inspector-ref-img" src="" class="w-12 h-12 rounded-xl object-cover border border-slate-300 shadow-sm flex-shrink-0">
+            <div class="min-w-0">
+              <p class="text-[10px] font-black text-purple-700 uppercase tracking-wider">Source Reference</p>
+              <p class="text-[10px] text-slate-500 truncate">Remixed with AI Vision Guidance</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 PRO Action Buttons -->
+        <div class="space-y-2 pt-4 border-t border-slate-200">
+          <!-- 1. AI 4K Upscale Button -->
+          <button id="inspector-upscale-btn" onclick="upscaleCurrentCreation()" class="w-full py-2.5 px-4 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-800 font-extrabold text-xs flex items-center justify-center space-x-2 transition shadow-sm">
+            <i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i>
+            <span id="upscale-btn-text">✨ AI Face Fix & 4K Super-Resolution</span>
+          </button>
+
+          <!-- 2. Make Variations Button -->
+          <button id="inspector-var-btn" onclick="makeVariationsCurrent()" class="w-full py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-extrabold text-xs flex items-center justify-center space-x-2 transition shadow-sm">
+            <i data-lucide="dices" class="w-4 h-4 text-amber-600"></i>
+            <span id="var-btn-text">🎲 Make 2 Variations (Midjourney Grid)</span>
+          </button>
+
+          <!-- 3. Animate to Video Button -->
+          <button id="inspector-motion-btn" onclick="animateFromInspector()" class="w-full py-2.5 px-4 rounded-xl bg-cyan-50 border border-cyan-300 text-cyan-800 hover:bg-cyan-100 font-extrabold text-xs flex items-center justify-center space-x-2 transition shadow-sm">
+            <i data-lucide="film" class="w-4 h-4 text-cyan-600"></i>
+            <span>🎬 Animate to 5s Video</span>
+          </button>
+
+          <!-- 4. Download High-Res -->
+          <a id="inspector-download-btn" href="#" download="belzora_creation" class="btn-luminous-generate w-full py-2.5 px-4 rounded-xl font-extrabold text-xs flex items-center justify-center space-x-2 shadow-lg transition">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>📥 Download Lossless High-Res</span>
+          </a>
+
+          <!-- 5. Copy Image to Clipboard -->
+          <button id="inspector-copy-img-btn" onclick="copyImageToClipboard()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-extrabold text-xs flex items-center justify-center space-x-2 transition shadow-sm">
+            <i data-lucide="copy" class="w-4 h-4 text-slate-600"></i>
+            <span id="copy-img-btn-text">📋 Copy Image to Clipboard</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 5. SETTINGS / API KEY MODAL -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white border border-purple-200 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div class="flex items-center space-x-2.5">
+          <i data-lucide="key" class="w-5 h-5 text-purple-600"></i>
+          <h3 class="font-display font-extrabold text-lg text-slate-900">API Settings</h3>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-900">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-800 mb-1.5">Free Hugging Face Token (FLUX.1 ZeroGPU)</label>
+          <p class="text-[11px] text-slate-500 mb-2">100% Free forever (No credit card). Connects your personal high-speed FLUX.1 GPU quota!</p>
+          <input type="password" id="hf-token-input" placeholder="hf_..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-purple-500 font-mono">
+        </div>
+
+        <div class="p-3.5 bg-purple-50 rounded-2xl border border-purple-200 text-xs space-y-2">
+          <div class="flex items-center space-x-2 text-purple-800 font-bold">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+            <span class="text-emerald-700">Token Status: Connected & Active</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed text-[11px]">
+            Your Hugging Face token is saved in <b>.env</b> and generating true uncompressed 1024x1024 HD images without limits.
+          </p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end space-x-2.5">
+          <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900">Cancel</button>
+          <button onclick="saveApiSettings()" class="btn-luminous-generate px-5 py-2 rounded-xl text-xs font-extrabold shadow-md">Save Settings</button>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+          <span>Belzora AI Studio v4.0</span>
+          <span>Engineered with ❤️ by <b class="text-purple-700">Awais Ahmad Bhatti</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js?v=26.0"></script>
+  <script>
+    try {
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+      }
+    } catch (e) {
+      console.warn("Lucide init:", e);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+/* Lumina Studio - Luminous, Colorful & Premium Light Theme */
+
+:root {
+  --bg-main: #f8fafc;
+  --bg-sidebar: #ffffff;
+  --bg-rail: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border-subtle: #e2e8f0;
+  --border-focus: #a855f7;
+}
+
+html {
+  scroll-behavior: smooth;
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  min-height: 100vh;
+}
+
+/* Radiant Multi-Color Ambient Mesh (No Black!) */
+.luminous-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 10% 15%, rgba(168, 85, 247, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 90% 20%, rgba(244, 63, 94, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(6, 182, 212, 0.14) 0%, transparent 50%),
+    radial-gradient(circle at 80% 85%, rgba(245, 158, 11, 0.12) 0%, transparent 40%),
+    #f8fafc;
+  pointer-events: none;
+}
+
+/* Luminous Floating Colorful Orbs */
+.orb-glow-1 {
+  position: absolute;
+  top: -5%;
+  left: 20%;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, rgba(168, 85, 247, 0) 70%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.orb-glow-2 {
+  position: absolute;
+  bottom: 10%;
+  right: 15%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(236, 72, 153, 0) 70%);
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+/* Crisp Frosted Panels */
+.luminous-sidebar {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border-right: 1px solid var(--border-subtle);
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.03);
+}
+
+.luminous-rail {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border-subtle);
+  box-shadow: 4px 0 20px rgba(15, 23, 42, 0.02);
+}
+
+.luminous-prompt-bar {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.08);
+}
+
+/* High-Energy Vibrant Generate Button */
+.btn-luminous-generate {
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #6366f1 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 24px -4px rgba(236, 72, 153, 0.4), 0 4px 12px -2px rgba(168, 85, 247, 0.3);
+  transition: all 0.25s ease;
+}
+
+.btn-luminous-generate:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 12px 30px -4px rgba(236, 72, 153, 0.6), 0 6px 16px -2px rgba(99, 102, 241, 0.4);
+}
+
+/* Leonardo Style Switch Checkbox */
+.switch-checkbox:checked + .switch-label {
+  background: linear-gradient(to right, #ec4899, #a855f7);
+}
+.switch-checkbox:checked + .switch-label .switch-dot {
+  transform: translateX(1.25rem);
+}
+
+/* Feed Item Card Styling */
+.feed-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background-color: #ffffff;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.feed-item:hover {
+  transform: translateY(-4px);
+  border-color: #a855f7;
+  box-shadow: 0 16px 35px -8px rgba(168, 85, 247, 0.25);
+}
+
+.feed-item .feed-overlay {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.feed-item:hover .feed-overlay {
+  opacity: 1;
+}
+
+/* Active aspect ratios & pills */
+.active-ratio {
+  border-color: #a855f7 !important;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%) !important;
+  color: #7e22ce !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.25);
+}
+
+/* Visible, High-Contrast Luminous Scrollbars */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: #ec4899 #f1f5f9;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-left: 1px solid #e2e8f0;
+  border-top: 1px solid #e2e8f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #06b6d4 100%);
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #db2777 0%, #9333ea 50%, #0891b2 100%);
+  border: 1px solid #e2e8f0;
+}
+
+::-webkit-scrollbar-corner {
+  background: #f1f5f9;
+}
+
+/* Ensure Settings rail has smooth, visible scrollbar */
+#leo-settings-rail::-webkit-scrollbar {
+  width: 10px;
+  display: block !important;
+}
+
+#leo-settings-rail::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #ec4899, #a855f7, #6366f1);
+  border-radius: 8px;
+}
+
+/* Luminous Laser Scanline */
+@keyframes luminous-scan {
+  0% { transform: translateY(-100%); opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0.8; }
+}
+
+.luminous-scanner-line {
+  position: absolute;
+  inset-x: 0;
+  top: 50%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #ec4899, #a855f7, #06b6d4, transparent);
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.8);
+  animation: luminous-scan 2.2s ease-in-out infinite alternate;
+}
+
+/* Luminous Holographic Shimmer */
+@keyframes shimmerGlow {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, #ec4899 0%, #8b5cf6 25%, #06b6d4 50%, #ec4899 100%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmerGlow 6s linear infinite;
+}
+
+/* Glass Card Elevation */
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 35px -10px rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+/* Smart Scroll Tooltip Expand Transition */
+#smart-scroll-btn:hover {
+  box-shadow: 0 12px 30px -4px rgba(236, 72, 153, 0.35), 0 6px 14px -2px rgba(168, 85, 247, 0.25);
+}
