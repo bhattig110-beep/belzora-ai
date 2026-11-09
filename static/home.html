@@ -38,82 +38,82 @@
 
   <!-- 1. STICKY GLASSMORPHISM NAVBAR -->
   <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 transition-all shadow-sm">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
       
       <!-- Logo & Brand Name -->
-      <a href="/" class="flex items-center space-x-2 sm:space-x-3 group flex-shrink-0">
+      <a href="/" class="flex items-center space-x-2 sm:space-x-3 group flex-shrink-0 mr-2 sm:mr-4 lg:mr-6">
         <div class="relative flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl group-hover:scale-105 transition transform flex-shrink-0 shadow-md shadow-purple-500/15">
           <img src="/static/images/belzora-icon.svg" alt="Belzora AI" class="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(168,85,247,0.25)]">
         </div>
-        <span class="font-display font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-purple-600 transition">
+        <span class="font-display font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-purple-600 transition whitespace-nowrap">
           Belzora<span class="text-pink-500"> AI</span>
         </span>
       </a>
 
-      <!-- Navigation Links -->
-      <nav class="hidden md:flex items-center space-x-7 text-sm font-bold text-slate-600">
-        <a href="#features" class="hover:text-purple-600 transition">Features</a>
-        <a href="#showcase" class="hover:text-purple-600 transition">Showcase</a>
-        <a href="/studio?tab=face" class="hover:text-pink-600 transition flex items-center space-x-1 text-pink-600">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-500"></i>
+      <!-- Navigation Links (Visible on lg+ screens: 1024px and up) -->
+      <nav class="hidden lg:flex items-center space-x-4 xl:space-x-6 text-sm font-bold text-slate-600">
+        <a href="#features" class="hover:text-purple-600 transition whitespace-nowrap">Features</a>
+        <a href="#showcase" class="hover:text-purple-600 transition whitespace-nowrap">Showcase</a>
+        <a href="/studio?tab=face" class="hover:text-pink-600 transition flex items-center space-x-1.5 text-pink-600 font-extrabold whitespace-nowrap">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-500 flex-shrink-0"></i>
           <span>Clean Face</span>
         </a>
-        <a href="#models" class="hover:text-purple-600 transition">Models</a>
-        <a href="#pricing" class="hover:text-purple-600 transition">Tokens & Pricing</a>
-        <a href="#faq" class="hover:text-purple-600 transition">FAQ</a>
+        <a href="#models" class="hover:text-purple-600 transition whitespace-nowrap">Models</a>
+        <a href="#pricing" class="hover:text-purple-600 transition whitespace-nowrap">Pricing</a>
+        <a href="#faq" class="hover:text-purple-600 transition whitespace-nowrap">FAQ</a>
       </nav>
 
       <!-- Auth Action Area (Dynamic Guest / User State) -->
-      <div id="nav-auth-container" class="flex items-center space-x-1.5 sm:space-x-3">
+      <div id="nav-auth-container" class="flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0">
         <!-- Guest View (Default) -->
         <div id="nav-guest-view" class="flex items-center space-x-1.5 sm:space-x-2.5">
-          <button onclick="openLoginModal()" class="px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-purple-700 hover:bg-purple-50 transition border border-slate-200 hover:border-purple-300">
+          <button onclick="openLoginModal()" class="px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-purple-700 hover:bg-purple-50 transition border border-slate-200 hover:border-purple-300 whitespace-nowrap">
             Sign In
           </button>
-          <button onclick="openSignupModal()" class="btn-luminous-generate px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1 sm:space-x-1.5 cursor-pointer">
+          <button onclick="openSignupModal()" class="btn-luminous-generate px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1 sm:space-x-1.5 cursor-pointer whitespace-nowrap">
             <i data-lucide="sparkles" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             <span>Sign Up Free</span>
           </button>
         </div>
 
         <!-- Logged In User View (Hidden until authenticated) -->
-        <div id="nav-user-view" class="hidden flex items-center space-x-1.5 sm:space-x-3">
+        <div id="nav-user-view" class="hidden flex items-center space-x-1.5 sm:space-x-2.5 flex-shrink-0">
           <!-- Token Pill -->
-          <div class="hidden sm:flex items-center space-x-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-black text-amber-700 shadow-sm">
-            <i data-lucide="zap" class="w-3.5 h-3.5 fill-amber-500 text-amber-500"></i>
+          <div class="flex items-center space-x-1 sm:space-x-1.5 bg-amber-50 border border-amber-200 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-xs font-black text-amber-700 shadow-sm whitespace-nowrap">
+            <i data-lucide="zap" class="w-3.5 h-3.5 fill-amber-500 text-amber-500 flex-shrink-0"></i>
             <span id="nav-token-display">150</span>
-            <span class="text-[10px] text-amber-500 uppercase font-black">Tokens</span>
+            <span class="hidden sm:inline text-[10px] text-amber-500 uppercase font-black">Tokens</span>
           </div>
 
           <!-- User Avatar & Name -->
-          <div class="flex items-center space-x-1.5 sm:space-x-2 bg-white border border-slate-200 p-1 sm:p-1.5 sm:pr-3 rounded-xl sm:rounded-2xl shadow-sm">
-            <img id="nav-user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Awais" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl object-cover bg-purple-50 border border-purple-200">
-            <span id="nav-user-name" class="text-xs font-bold text-slate-800 max-w-[80px] sm:max-w-[120px] truncate">Creator</span>
+          <div class="flex items-center space-x-1.5 bg-white border border-slate-200 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl shadow-sm whitespace-nowrap">
+            <img id="nav-user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Awais" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl object-cover bg-purple-50 border border-purple-200 flex-shrink-0">
+            <span id="nav-user-name" class="hidden xl:inline text-xs font-bold text-slate-800 max-w-[100px] truncate pr-1">Creator</span>
           </div>
 
           <!-- Launch Studio Button -->
-          <a href="/studio" class="btn-luminous-generate px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1 sm:space-x-1.5">
+          <a href="/studio" class="btn-luminous-generate px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black shadow-lg shadow-pink-500/20 hover:scale-105 transition flex items-center space-x-1 sm:space-x-1.5 whitespace-nowrap flex-shrink-0">
             <span class="hidden sm:inline">Launch Studio</span>
             <span class="sm:hidden">Studio</span>
             <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
           </a>
 
           <!-- Logout Button -->
-          <button onclick="handleLogout()" title="Sign Out" class="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-200">
+          <button onclick="handleLogout()" title="Sign Out" class="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-200 flex-shrink-0">
             <i data-lucide="log-out" class="w-4 h-4"></i>
           </button>
         </div>
 
-        <!-- Mobile Hamburger Menu Button (md:hidden) -->
-        <button id="mobile-menu-btn" onclick="toggleMobileNav()" class="md:hidden p-2 rounded-xl text-slate-700 hover:text-purple-600 hover:bg-purple-50 transition border border-slate-200 ml-1 cursor-pointer" title="Navigation Menu">
+        <!-- Mobile Hamburger Menu Button (lg:hidden) -->
+        <button id="mobile-menu-btn" onclick="toggleMobileNav()" class="lg:hidden p-2 rounded-xl text-slate-700 hover:text-purple-600 hover:bg-purple-50 transition border border-slate-200 ml-1 cursor-pointer flex-shrink-0" title="Navigation Menu">
           <i id="mobile-menu-icon" data-lucide="menu" class="w-5 h-5"></i>
         </button>
       </div>
 
     </div>
 
-    <!-- Mobile Dropdown Navigation Drawer (Shows Features, Showcase, Models, Tokens & Pricing, FAQ on Mobile) -->
-    <div id="mobile-nav-drawer" class="hidden md:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-200/80 shadow-2xl px-4 py-3 space-y-2">
+    <!-- Mobile Dropdown Navigation Drawer (Shows Features, Showcase, Models, Tokens & Pricing, FAQ on Mobile & Tablets) -->
+    <div id="mobile-nav-drawer" class="hidden lg:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-200/80 shadow-2xl px-4 py-3 space-y-2">
       <nav class="flex flex-col space-y-1">
         <a href="#features" onclick="toggleMobileNav()" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold text-sm transition">
           <i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i>
