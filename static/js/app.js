@@ -33,6 +33,18 @@ function safeLucide() {
   }
 }
 
+function toggleMobileSettings() {
+  const rail = document.getElementById('leo-settings-rail');
+  const backdrop = document.getElementById('mobile-settings-backdrop');
+  if (rail) {
+    rail.classList.toggle('mobile-open');
+  }
+  if (backdrop) {
+    backdrop.classList.toggle('active');
+  }
+  safeLucide();
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   console.log("Belzora AI Studio Pro Suite Initialized!");
