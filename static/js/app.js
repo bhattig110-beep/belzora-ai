@@ -13,6 +13,8 @@ let allCreations = [];
 let creationsMap = {};
 let currentFilter = 'all';
 let tokenBalance = 150;
+let selectedFaceBase64 = null;
+let restoredFaceUrl = null;
 
 const SAMPLE_PROMPTS = [
   "A hyper-detailed cinematic portrait of an ancient cosmic oracle with glowing violet eyes, star dust drifting, 8k, photoreal, octane render",
@@ -135,6 +137,10 @@ function checkUrlParams() {
       input.focus();
     }
   }
+  const tabParam = params.get('tab');
+  if (tabParam === 'face' || tabParam === 'video' || tabParam === 'image') {
+    switchLeonardoTab(tabParam);
+  }
 }
 
 // Setup Ctrl+Enter shortcut
@@ -170,20 +176,48 @@ function toggleTagDrawer() {
   }
 }
 
-// Switch between Image Generation & Motion (Video)
+// Switch between Image Generation, Motion (Video), and Face Cleaner
 function switchLeonardoTab(tab) {
   currentMode = tab;
   const imgBtn = document.getElementById('nav-image-btn');
   const vidBtn = document.getElementById('nav-video-btn');
+  const faceBtn = document.getElementById('nav-face-btn');
+  const mobileImgBtn = document.getElementById('mobile-nav-image-btn');
+  const mobileFaceBtn = document.getElementById('mobile-nav-face-btn');
+  const promptTopBar = document.getElementById('prompt-top-bar');
+  const galleryFeed = document.getElementById('leo-gallery-feed');
+  const facePanel = document.getElementById('face-restore-panel');
   const railTitle = document.getElementById('rail-title');
   const modelSelect = document.getElementById('model-select');
   const genBtnText = document.getElementById('generate-btn-text');
   const tokenCost = document.getElementById('gen-token-cost');
   const stylePills = document.getElementById('style-pills');
 
-  if (tab === 'image') {
+  const defaultBtnClass = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-slate-900 hover:bg-slate-100";
+  if (imgBtn) imgBtn.className = defaultBtnClass;
+  if (vidBtn) vidBtn.className = defaultBtnClass;
+  if (faceBtn) faceBtn.className = defaultBtnClass;
+
+  if (mobileImgBtn) mobileImgBtn.className = "flex flex-col items-center text-slate-500 hover:text-purple-600 transition";
+  if (mobileFaceBtn) mobileFaceBtn.className = "flex flex-col items-center text-slate-500 hover:text-pink-600 transition";
+
+  if (tab === 'face') {
+    if (faceBtn) faceBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-pink-500 via-rose-500 to-purple-600 text-white shadow-md shadow-pink-500/30";
+    if (mobileFaceBtn) mobileFaceBtn.className = "flex flex-col items-center text-pink-600 transition";
+
+    if (facePanel) facePanel.classList.remove('hidden');
+    if (galleryFeed) galleryFeed.classList.add('hidden');
+    if (promptTopBar) promptTopBar.classList.add('hidden');
+
+    if (railTitle) railTitle.textContent = "AI FACE CLEANER";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (tab === 'image') {
     if (imgBtn) imgBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-purple-600 via-pink-500 to-purple-500 text-white shadow-md shadow-pink-500/30";
-    if (vidBtn) vidBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-slate-900 hover:bg-slate-100";
+    if (mobileImgBtn) mobileImgBtn.className = "flex flex-col items-center text-purple-600 transition";
+
+    if (facePanel) facePanel.classList.add('hidden');
+    if (galleryFeed) galleryFeed.classList.remove('hidden');
+    if (promptTopBar) promptTopBar.classList.remove('hidden');
 
     if (railTitle) railTitle.textContent = "IMAGE SETTINGS";
     if (genBtnText) genBtnText.textContent = "Generate";
@@ -201,7 +235,11 @@ function switchLeonardoTab(tab) {
     setDimension('1:1', '1024 × 1024');
   } else {
     if (vidBtn) vidBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30";
-    if (imgBtn) imgBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-slate-900 hover:bg-slate-100";
+    if (mobileImgBtn) mobileImgBtn.className = "flex flex-col items-center text-slate-500 transition";
+
+    if (facePanel) facePanel.classList.add('hidden');
+    if (galleryFeed) galleryFeed.classList.remove('hidden');
+    if (promptTopBar) promptTopBar.classList.remove('hidden');
 
     if (railTitle) railTitle.textContent = "MOTION 2.0 SETTINGS";
     if (genBtnText) genBtnText.textContent = "Generate Motion";
@@ -1040,3 +1078,269 @@ function scrollToTopFeed() {
 window.addEventListener('scroll', () => {
   requestAnimationFrame(updateSmartScrollButton);
 }, { passive: true });
+
+// =========================================================================
+// 1-CLICK AI FACE CLEANER, BRIGHTENER & NEURAL RESTORER ENGINE
+// =========================================================================
+
+function loadFaceFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    alert("Please upload a valid image file (JPG, PNG, or WEBP).");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedFaceBase64 = e.target.result;
+    const origImg = document.getElementById('face-original-img');
+    if (origImg) origImg.src = selectedFaceBase64;
+
+    const uploadZone = document.getElementById('face-upload-zone');
+    const previewSection = document.getElementById('face-preview-section');
+    if (uploadZone) uploadZone.classList.add('hidden');
+    if (previewSection) previewSection.classList.remove('hidden');
+
+    const placeholder = document.getElementById('face-result-placeholder');
+    const processView = document.getElementById('face-processing-view');
+    const restoredImg = document.getElementById('face-restored-img');
+    const downloadBtn = document.getElementById('face-download-btn');
+    const cleanBtn = document.getElementById('face-clean-btn');
+    const cleanBtnText = document.getElementById('face-clean-btn-text');
+
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (processView) processView.classList.add('hidden');
+    if (restoredImg) restoredImg.classList.add('hidden');
+    if (downloadBtn) downloadBtn.classList.add('hidden');
+    if (cleanBtn) {
+      cleanBtn.classList.remove('hidden', 'opacity-75', 'cursor-not-allowed');
+      cleanBtn.disabled = false;
+    }
+    if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
+
+    const badge = document.getElementById('face-status-badge');
+    if (badge) {
+      badge.textContent = 'Ready to Clean';
+      badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600';
+    }
+    safeLucide();
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleFacePhotoSelect(event) {
+  if (event.target && event.target.files && event.target.files[0]) {
+    loadFaceFile(event.target.files[0]);
+  }
+}
+
+function handleFaceDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('face-upload-zone');
+  if (zone) zone.classList.add('border-pink-500', 'bg-pink-100/50');
+}
+
+function handleFaceDragLeave(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('face-upload-zone');
+  if (zone) zone.classList.remove('border-pink-500', 'bg-pink-100/50');
+}
+
+function handleFaceDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('face-upload-zone');
+  if (zone) zone.classList.remove('border-pink-500', 'bg-pink-100/50');
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+    loadFaceFile(e.dataTransfer.files[0]);
+  }
+}
+
+async function loadSampleFacePhoto(event) {
+  if (event) event.stopPropagation();
+  try {
+    const res = await fetch('/static/images/sample_face_demo.jpg');
+    const blob = await res.blob();
+    const file = new File([blob], "sample_face_demo.jpg", { type: "image/jpeg" });
+    loadFaceFile(file);
+    const badge = document.getElementById('face-status-badge');
+    if (badge) {
+      badge.textContent = 'Demo Sample Loaded • Ready to Clean';
+      badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700';
+    }
+  } catch (err) {
+    console.warn("Failed to load sample face photo:", err);
+  }
+}
+
+async function executeFaceRestore() {
+  if (!selectedFaceBase64) {
+    alert("Please upload or drop a face photo first!");
+    return;
+  }
+
+  const cleanBtn = document.getElementById('face-clean-btn');
+  const cleanBtnText = document.getElementById('face-clean-btn-text');
+  const placeholder = document.getElementById('face-result-placeholder');
+  const processView = document.getElementById('face-processing-view');
+  const processTitle = document.getElementById('face-process-title');
+  const processSub = document.getElementById('face-process-sub');
+  const progressBar = document.getElementById('face-process-bar');
+  const statusBadge = document.getElementById('face-status-badge');
+  const restoredImg = document.getElementById('face-restored-img');
+  const downloadBtn = document.getElementById('face-download-btn');
+  const autoBrighten = document.getElementById('face-auto-brighten') ? document.getElementById('face-auto-brighten').checked : true;
+
+  // Set processing state
+  if (cleanBtn) {
+    cleanBtn.disabled = true;
+    cleanBtn.classList.add('opacity-75', 'cursor-not-allowed');
+  }
+  if (cleanBtnText) cleanBtnText.textContent = "Cleaning Face with AI...";
+  if (placeholder) placeholder.classList.add('hidden');
+  if (processView) processView.classList.remove('hidden');
+  if (restoredImg) restoredImg.classList.add('hidden');
+  if (downloadBtn) downloadBtn.classList.add('hidden');
+
+  if (statusBadge) {
+    statusBadge.textContent = 'Neural Processing...';
+    statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 animate-pulse';
+  }
+
+  // Animated status progress
+  let progress = 15;
+  if (progressBar) progressBar.style.width = `${progress}%`;
+  
+  const progressInterval = setInterval(() => {
+    if (progress < 40) {
+      progress += 8;
+      if (processTitle) processTitle.textContent = "Detecting Facial Landmarks...";
+      if (processSub) processSub.textContent = "Aligning eyes, nose, lips and facial contours...";
+    } else if (progress < 75) {
+      progress += 5;
+      if (processTitle) processTitle.textContent = "Neural Pixel Reconstruction...";
+      if (processSub) processSub.textContent = "Restoring blurry pupils, eyebrows, teeth & skin texture via CodeFormer...";
+    } else if (progress < 92) {
+      progress += 2;
+      if (processTitle) processTitle.textContent = "Auto-Luminance & 2048px Super-Res...";
+      if (processSub) processSub.textContent = "Clearing dark shadows and balancing skin tone vibrancy...";
+    }
+    if (progressBar) progressBar.style.width = `${progress}%`;
+  }, 1100);
+
+  try {
+    const userStr = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+    let userId = "usr_demo_01";
+    if (userStr) {
+      try { userId = JSON.parse(userStr).id || "usr_demo_01"; } catch(e){}
+    }
+
+    const response = await fetch('/api/restore-face', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_base64: selectedFaceBase64,
+        brighten_face: autoBrighten,
+        fidelity: 0.6,
+        upscale: 2,
+        user_id: userId
+      })
+    });
+
+    clearInterval(progressInterval);
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      throw new Error(errJson.detail || "Face restoration service busy");
+    }
+
+    const data = await response.json();
+    restoredFaceUrl = data.restored_url;
+
+    if (progressBar) progressBar.style.width = '100%';
+    if (processTitle) processTitle.textContent = "Face Restored Successfully!";
+
+    setTimeout(() => {
+      if (processView) processView.classList.add('hidden');
+      if (restoredImg) {
+        restoredImg.src = `${data.restored_url}?t=${Date.now()}`;
+        restoredImg.classList.remove('hidden');
+      }
+      if (downloadBtn) downloadBtn.classList.remove('hidden');
+      if (cleanBtn) {
+        cleanBtn.disabled = false;
+        cleanBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+      }
+      if (cleanBtnText) cleanBtnText.textContent = "✨ Clean Again (1-Click)";
+
+      if (statusBadge) {
+        statusBadge.textContent = '2048px Crystal Clean HD ✨';
+        statusBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
+      }
+
+      // Deduct small token cost for restoration
+      deductUserTokens(2);
+      // Refresh creation feed so the restored item shows in gallery too
+      fetchCreations();
+      safeLucide();
+    }, 400);
+
+  } catch (err) {
+    clearInterval(progressInterval);
+    console.error("Face restore error:", err);
+    alert("Error restoring face: " + (err.message || "Please try again!"));
+    if (processView) processView.classList.add('hidden');
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (cleanBtn) {
+      cleanBtn.disabled = false;
+      cleanBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+    }
+    if (cleanBtnText) cleanBtnText.textContent = "✨ Try Again";
+    if (statusBadge) {
+      statusBadge.textContent = 'Error';
+      statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-700';
+    }
+    safeLucide();
+  }
+}
+
+function downloadRestoredFace() {
+  if (!restoredFaceUrl) return;
+  const a = document.createElement('a');
+  a.href = restoredFaceUrl;
+  a.download = `belzora_clean_face_hd_${Date.now()}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function resetFaceRestore() {
+  selectedFaceBase64 = null;
+  restoredFaceUrl = null;
+  const fileInput = document.getElementById('face-file-input');
+  if (fileInput) fileInput.value = '';
+
+  const uploadZone = document.getElementById('face-upload-zone');
+  const previewSection = document.getElementById('face-preview-section');
+  if (uploadZone) uploadZone.classList.remove('hidden');
+  if (previewSection) previewSection.classList.add('hidden');
+
+  const placeholder = document.getElementById('face-result-placeholder');
+  const processView = document.getElementById('face-processing-view');
+  const restoredImg = document.getElementById('face-restored-img');
+  const downloadBtn = document.getElementById('face-download-btn');
+  const cleanBtn = document.getElementById('face-clean-btn');
+  const cleanBtnText = document.getElementById('face-clean-btn-text');
+
+  if (placeholder) placeholder.classList.remove('hidden');
+  if (processView) processView.classList.add('hidden');
+  if (restoredImg) restoredImg.classList.add('hidden');
+  if (downloadBtn) downloadBtn.classList.add('hidden');
+
+  if (cleanBtn) {
+    cleanBtn.disabled = false;
+    cleanBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+  }
+  if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
+  safeLucide();
+}
