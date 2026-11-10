@@ -1550,26 +1550,26 @@ async function executeFaceRestore() {
     statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 animate-pulse';
   }
 
-  // Animated status progress
-  let progress = 20;
+  // Animated status progress across neural pipeline stages
+  let progress = 15;
   if (progressBar) progressBar.style.width = `${progress}%`;
   
   const progressInterval = setInterval(() => {
-    if (progress < 50) {
-      progress += 12;
+    if (progress < 45) {
+      progress += 4;
       if (processTitle) processTitle.textContent = "Detecting Facial Landmarks...";
-      if (processSub) processSub.textContent = "Aligning eyes, nose, lips and facial contours...";
-    } else if (progress < 85) {
-      progress += 8;
-      if (processTitle) processTitle.textContent = "Neural Pixel Reconstruction...";
-      if (processSub) processSub.textContent = "Restoring blurry pupils, eyebrows, teeth & skin texture via CodeFormer...";
-    } else if (progress < 95) {
-      progress += 3;
-      if (processTitle) processTitle.textContent = "Auto-Luminance & 2048px Super-Res...";
-      if (processSub) processSub.textContent = "Clearing dark shadows and balancing skin tone vibrancy...";
+      if (processSub) processSub.textContent = "Aligning eyes, nose, lips and facial contours with RetinaFace...";
+    } else if (progress < 80) {
+      progress += 2;
+      if (processTitle) processTitle.textContent = "Neural Face Reconstruction...";
+      if (processSub) processSub.textContent = "Restoring blurry pupils, natural skin texture & micro-details via CodeFormer...";
+    } else if (progress < 94) {
+      progress += 1;
+      if (processTitle) processTitle.textContent = "Ultra HD Super-Res...";
+      if (processSub) processSub.textContent = "Real-ESRGAN upsampling background and matching natural skin tones...";
     }
     if (progressBar) progressBar.style.width = `${progress}%`;
-  }, 400);
+  }, 1000);
 
   try {
     const userStr = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
@@ -1584,7 +1584,7 @@ async function executeFaceRestore() {
       body: JSON.stringify({
         image_base64: selectedFaceBase64,
         brighten_face: autoBrighten,
-        fidelity: 0.6,
+        fidelity: 0.7,
         upscale: 2,
         user_id: userId
       })
