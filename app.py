@@ -21,6 +21,12 @@ from gradio_client import Client, handle_file
 from dotenv import load_dotenv
 from PIL import Image, ImageEnhance, ImageFilter, ImageStat
 
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except Exception:
+    pass
+
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
