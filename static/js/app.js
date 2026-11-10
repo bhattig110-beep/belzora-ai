@@ -36,6 +36,9 @@ function safeLucide() {
 }
 
 function toggleMobileSettings() {
+  if (currentMode === 'face') {
+    switchLeonardoTab('image');
+  }
   const rail = document.getElementById('leo-settings-rail');
   const backdrop = document.getElementById('mobile-settings-backdrop');
   if (rail) {
@@ -187,6 +190,8 @@ function switchLeonardoTab(tab) {
   const promptTopBar = document.getElementById('prompt-top-bar');
   const galleryFeed = document.getElementById('leo-gallery-feed');
   const facePanel = document.getElementById('face-restore-panel');
+  const settingsRail = document.getElementById('leo-settings-rail');
+  const backdrop = document.getElementById('mobile-settings-backdrop');
   const railTitle = document.getElementById('rail-title');
   const modelSelect = document.getElementById('model-select');
   const genBtnText = document.getElementById('generate-btn-text');
@@ -205,15 +210,24 @@ function switchLeonardoTab(tab) {
     if (faceBtn) faceBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-pink-500 via-rose-500 to-purple-600 text-white shadow-md shadow-pink-500/30";
     if (mobileFaceBtn) mobileFaceBtn.className = "flex flex-col items-center text-pink-600 transition";
 
+    // Hide generator settings rail so Face Cleaner gets full width clean canvas
+    if (settingsRail) {
+      settingsRail.style.display = 'none';
+      settingsRail.classList.remove('mobile-open');
+    }
+    if (backdrop) backdrop.classList.remove('active');
+
     if (facePanel) facePanel.classList.remove('hidden');
     if (galleryFeed) galleryFeed.classList.add('hidden');
     if (promptTopBar) promptTopBar.classList.add('hidden');
 
-    if (railTitle) railTitle.textContent = "AI FACE CLEANER";
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (tab === 'image') {
     if (imgBtn) imgBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-purple-600 via-pink-500 to-purple-500 text-white shadow-md shadow-pink-500/30";
     if (mobileImgBtn) mobileImgBtn.className = "flex flex-col items-center text-purple-600 transition";
+
+    // Show generator settings rail
+    if (settingsRail) settingsRail.style.display = '';
 
     if (facePanel) facePanel.classList.add('hidden');
     if (galleryFeed) galleryFeed.classList.remove('hidden');
@@ -236,6 +250,9 @@ function switchLeonardoTab(tab) {
   } else {
     if (vidBtn) vidBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30";
     if (mobileImgBtn) mobileImgBtn.className = "flex flex-col items-center text-slate-500 transition";
+
+    // Show generator settings rail
+    if (settingsRail) settingsRail.style.display = '';
 
     if (facePanel) facePanel.classList.add('hidden');
     if (galleryFeed) galleryFeed.classList.remove('hidden');
