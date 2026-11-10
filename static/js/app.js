@@ -1100,14 +1100,30 @@ window.addEventListener('scroll', () => {
 // 1-CLICK AI FACE CLEANER, BRIGHTENER & NEURAL RESTORER ENGINE
 // =========================================================================
 
+function isImageFile(file) {
+  if (!file) return false;
+  if (file.type && file.type.startsWith('image/')) return true;
+  const name = (file.name || '').toLowerCase();
+  const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.jfif', '.bmp', '.heic', '.heif', '.gif', '.tif', '.tiff'];
+  return validExtensions.some(ext => name.endsWith(ext));
+}
+
 function loadFaceFile(file) {
-  if (!file || !file.type.startsWith('image/')) {
+  if (!file) return;
+  if (!isImageFile(file)) {
     alert("Please upload a valid image file (JPG, PNG, or WEBP).");
     return;
   }
   const reader = new FileReader();
   reader.onload = function(e) {
-    selectedFaceBase64 = e.target.result;
+    let result = e.target.result;
+    if (result && !result.startsWith('data:image/')) {
+      const parts = result.split(',');
+      if (parts.length === 2) {
+        result = 'data:image/jpeg;base64,' + parts[1];
+      }
+    }
+    selectedFaceBase64 = result;
     const origImg = document.getElementById('face-original-img');
     if (origImg) origImg.src = selectedFaceBase64;
 
@@ -1139,6 +1155,9 @@ function loadFaceFile(file) {
       badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600';
     }
     safeLucide();
+  };
+  reader.onerror = function() {
+    alert("Could not read file. Please try another image.");
   };
   reader.readAsDataURL(file);
 }
@@ -1174,19 +1193,53 @@ function handleFaceDrop(e) {
 }
 
 async function loadSampleFacePhoto(event) {
-  if (event) event.stopPropagation();
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
   try {
-    const res = await fetch('/static/images/sample_face_demo.jpg');
+    const res = await fetch('/static/images/sample_face_demo.jpg?v=' + Date.now());
+    if (!res.ok) throw new Error("Could not fetch sample photo");
     const blob = await res.blob();
-    const file = new File([blob], "sample_face_demo.jpg", { type: "image/jpeg" });
-    loadFaceFile(file);
-    const badge = document.getElementById('face-status-badge');
-    if (badge) {
-      badge.textContent = 'Demo Sample Loaded • Ready to Clean';
-      badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700';
-    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      selectedFaceBase64 = e.target.result;
+      const origImg = document.getElementById('face-original-img');
+      if (origImg) origImg.src = selectedFaceBase64;
+
+      const uploadZone = document.getElementById('face-upload-zone');
+      const previewSection = document.getElementById('face-preview-section');
+      if (uploadZone) uploadZone.classList.add('hidden');
+      if (previewSection) previewSection.classList.remove('hidden');
+
+      const placeholder = document.getElementById('face-result-placeholder');
+      const processView = document.getElementById('face-processing-view');
+      const restoredImg = document.getElementById('face-restored-img');
+      const downloadBtn = document.getElementById('face-download-btn');
+      const cleanBtn = document.getElementById('face-clean-btn');
+      const cleanBtnText = document.getElementById('face-clean-btn-text');
+
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (processView) processView.classList.add('hidden');
+      if (restoredImg) restoredImg.classList.add('hidden');
+      if (downloadBtn) downloadBtn.classList.add('hidden');
+      if (cleanBtn) {
+        cleanBtn.classList.remove('hidden', 'opacity-75', 'cursor-not-allowed');
+        cleanBtn.disabled = false;
+      }
+      if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
+
+      const badge = document.getElementById('face-status-badge');
+      if (badge) {
+        badge.textContent = 'Demo Sample Loaded • Ready to Clean';
+        badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700';
+      }
+      safeLucide();
+    };
+    reader.readAsDataURL(blob);
   } catch (err) {
     console.warn("Failed to load sample face photo:", err);
+    alert("Could not load sample. Please browse a photo from your device.");
   }
 }
 
