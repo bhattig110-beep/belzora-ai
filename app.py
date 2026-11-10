@@ -538,6 +538,19 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process input image: {e}")
 
+    # 1.1 Normalize image format & scale down if over 1280px to guarantee instant GPU inference
+    try:
+        with Image.open(orig_path) as im_norm:
+            im_norm = im_norm.convert("RGB")
+            ow, oh = im_norm.size
+            if max(ow, oh) > 1280:
+                ratio = 1280.0 / max(ow, oh)
+                new_size = (max(64, int(ow * ratio)), max(64, int(oh * ratio)))
+                im_norm = im_norm.resize(new_size, Image.Resampling.LANCZOS)
+            im_norm.save(orig_path, format="PNG")
+    except Exception as norm_err:
+        print(f"Image normalization note: {norm_err}")
+
     # 2. Run CodeFormer neural face restorer
     loop = asyncio.get_event_loop()
     success_cf = False
@@ -560,9 +573,10 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
         return True
 
     try:
-        success_cf = await loop.run_in_executor(None, run_cf)
+        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=20.0)
     except Exception as cf_err:
         print(f"CodeFormer restore note: {cf_err}, using smart neural fallback...")
+        success_cf = False
 
     # 3. Fallback or post-enhancement if CodeFormer succeeded or failed
     try:
@@ -570,7 +584,9 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             src_im = Image.open(orig_path).convert("RGB")
             w, h = src_im.size
             scale = req.upscale or 2
-            upscaled = src_im.resize((w * scale, h * scale), Image.Resampling.LANCZOS)
+            target_w = min(2048, w * scale)
+            target_h = int(h * (target_w / max(1, w)))
+            upscaled = src_im.resize((target_w, target_h), Image.Resampling.LANCZOS)
             upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=2))
             upscaled.save(restored_path, format="PNG")
 
