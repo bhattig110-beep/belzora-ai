@@ -1108,6 +1108,43 @@ function isImageFile(file) {
   return validExtensions.some(ext => name.endsWith(ext));
 }
 
+function resizeImageBlob(blobOrFile, maxDimension = 1280) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const url = URL.createObjectURL(blobOrFile);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (!width || !height) return resolve(blobOrFile);
+        if (width <= maxDimension && height <= maxDimension) return resolve(blobOrFile);
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((resizedBlob) => {
+          resolve(resizedBlob || blobOrFile);
+        }, 'image/jpeg', 0.90);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(blobOrFile);
+      };
+      img.src = url;
+    } catch (e) {
+      resolve(blobOrFile);
+    }
+  });
+}
+
 async function loadFaceFile(file) {
   if (!file) return;
   if (!isImageFile(file)) {
@@ -1157,6 +1194,13 @@ async function loadFaceFile(file) {
     } catch (heicErr) {
       console.warn("HEIC browser conversion notice:", heicErr);
     }
+  }
+
+  // Optimize & resize blob to max 1280px for instant upload & fast GPU inference
+  try {
+    targetBlob = await resizeImageBlob(targetBlob, 1280);
+  } catch (resizeErr) {
+    console.warn("Resize notice:", resizeErr);
   }
 
   const reader = new FileReader();
