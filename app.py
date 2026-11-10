@@ -574,7 +574,7 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     except Exception as norm_err:
         print(f"Image normalization note: {norm_err}")
 
-    # 2. Run CodeFormer neural face restorer (face_align=False to preserve full photo without crop)
+    # 2. Run CodeFormer neural face restorer (face_align=True to detect and restore all faces & paste back on full photo)
     loop = asyncio.get_event_loop()
     success_cf = False
 
@@ -582,13 +582,15 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
         cf = get_codeformer_client()
         if not cf:
             raise Exception("CodeFormer client unavailable")
+        # In CodeFormer: face_align=True triggers landmark detection & paste_faces_to_input_image
+        # upscale=2 triggers Real-ESRGAN to bring background and faces to 2048px Ultra HD
         res = cf.predict(
             image=handle_file(str(orig_path)),
-            face_align=False,
+            face_align=True,
             background_enhance=True,
             face_upsample=True,
-            upscale=1,
-            codeformer_fidelity=req.fidelity or 0.6,
+            upscale=2,
+            codeformer_fidelity=req.fidelity or 0.7,
             api_name="/inference"
         )
         out_p = res[0]['path'] if isinstance(res[0], dict) else res[0]
@@ -596,7 +598,7 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
         return True
 
     try:
-        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=20.0)
+        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=95.0)
     except Exception as cf_err:
         print(f"CodeFormer restore note: {cf_err}, using smart neural fallback...")
         success_cf = False
@@ -604,39 +606,39 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     # 3. Fallback or post-enhancement if CodeFormer succeeded or failed
     try:
         if not success_cf or not restored_path.exists():
-            src_im = Image.open(orig_path).convert("RGB")
-            w, h = src_im.size
-            scale = req.upscale or 2
-            target_w = min(2048, w * scale)
-            target_h = int(h * (target_w / max(1, w)))
-            upscaled = src_im.resize((target_w, target_h), Image.Resampling.LANCZOS)
-            upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=2))
-            upscaled.save(restored_path, format="PNG")
-            src_im.close()
+            with Image.open(orig_path) as src_im:
+                src_im = src_im.convert("RGB")
+                w, h = src_im.size
+                scale = req.upscale or 2
+                target_w = min(2048, w * scale)
+                target_h = int(h * (target_w / max(1, w)))
+                upscaled = src_im.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=1.5, percent=100, threshold=2))
+                upscaled.save(restored_path, format="PNG")
         else:
-            # CodeFormer succeeded: scale to 2048px Ultra HD if needed
+            # CodeFormer succeeded: verify aspect ratio matches original and scale smoothly if needed
             with Image.open(restored_path) as im_res:
                 rw, rh = im_res.size
-                if max(rw, rh) < 2048:
+                # If CodeFormer output is smaller than 2048 on long edge, upscale proportionally
+                if max(rw, rh) < 1800:
                     ratio = 2048.0 / max(rw, rh)
                     new_w = max(64, int(rw * ratio))
                     new_h = max(64, int(rh * ratio))
                     im_up = im_res.resize((new_w, new_h), Image.Resampling.LANCZOS)
                     im_up.save(restored_path, format="PNG")
 
-        # 4. Smart Brightening & Skin Tone Beautification (if face is dark or requested)
-        im = Image.open(restored_path).convert("RGB")
-        stat = ImageStat.Stat(im)
-        luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
+        # 4. Natural Skin Beautification: CodeFormer output is already photorealistic and sharp.
+        # Only apply very subtle, natural luminance adjustment if face is genuinely dark (luma < 90)
+        with Image.open(restored_path) as im_check:
+            im = im_check.convert("RGB")
+            stat = ImageStat.Stat(im)
+            luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
 
-        if req.brighten_face or luma < 125:
-            bright_factor = 1.18 if luma >= 100 else 1.28
-            im = ImageEnhance.Brightness(im).enhance(bright_factor)
-            im = ImageEnhance.Contrast(im).enhance(1.06)
-            im = ImageEnhance.Color(im).enhance(1.08)  # Natural warm skin glow
-            im = im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=125, threshold=2))
-            im.save(restored_path, format="PNG")
-            im.close()
+            if req.brighten_face and luma < 90:
+                # Genuinely dark photo: gentle natural boost without orange saturation
+                im = ImageEnhance.Brightness(im).enhance(1.08)
+                im = ImageEnhance.Contrast(im).enhance(1.03)
+                im.save(restored_path, format="PNG")
 
         with Image.open(restored_path) as im_fin:
             fin_w, fin_h = im_fin.size
