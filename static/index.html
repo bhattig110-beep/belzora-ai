@@ -124,11 +124,16 @@
 
       <!-- User Avatar / Profile -->
       <a href="/" id="sidebar-user-avatar-box" title="View Profile / Home" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-500 to-pink-500 p-[2px] shadow-sm block overflow-hidden hover:scale-105 transition">
-        <img id="sidebar-user-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=Awais" class="w-full h-full bg-white rounded-[9px] object-cover">
+        <img id="sidebar-user-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=Guest" class="w-full h-full bg-white rounded-[9px] object-cover">
       </a>
 
+      <!-- Sign In Button for Guest -->
+      <button id="sidebar-login-btn" onclick="openStudioAuthModal()" title="Sign In / Create Account" class="hidden w-9 h-9 rounded-xl flex items-center justify-center text-purple-600 hover:text-purple-900 hover:bg-purple-50 transition border border-purple-200 shadow-sm cursor-pointer">
+        <i data-lucide="log-in" class="w-4 h-4"></i>
+      </button>
+
       <!-- Sign Out / Exit to Home -->
-      <button onclick="logoutFromStudio()" title="Sign Out of Studio" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-slate-200 shadow-sm cursor-pointer">
+      <button id="sidebar-logout-btn" onclick="logoutFromStudio()" title="Sign Out of Studio" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-slate-200 shadow-sm cursor-pointer">
         <i data-lucide="log-out" class="w-4 h-4"></i>
       </button>
     </div>
@@ -438,9 +443,9 @@
         </div>
 
         <div class="flex items-center space-x-2 sm:space-x-3">
-          <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-black text-amber-700 shadow-sm">
+          <div id="face-token-badge" onclick="handleFaceBadgeClick()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-black text-amber-700 shadow-sm cursor-pointer hover:border-amber-400 transition" title="Token / Trial Status">
             <i data-lucide="zap" class="w-3.5 h-3.5 fill-amber-500 text-amber-500"></i>
-            <span>2 Tokens / Clean</span>
+            <span id="face-token-badge-text">2 Tokens / Clean</span>
           </div>
           <span class="text-xs font-extrabold px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 shadow-sm">
             CodeFormer 2048px HD
@@ -465,6 +470,43 @@
             Upload any low-resolution, pixelated, blurry, or dark/shadowed photo. Belzora's CodeFormer neural engine reconstructs facial landmarks (eyes, pupils, skin texture, lips) and auto-brightens dark faces to 2048px Ultra HD in just 1 click.
           </p>
         </div>
+      </div>
+
+      <!-- Option 2: Guest 1-Trial Banners -->
+      <div id="face-guest-trial-banner" class="hidden mb-6 p-4 rounded-3xl bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 border border-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-pink-500/20 flex-shrink-0">
+            🎁
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-extrabold text-slate-900 text-xs sm:text-sm">1 Free Guest Trial Active!</span>
+              <span class="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[10px] font-black uppercase">No Login Required</span>
+            </div>
+            <p class="text-[11px] text-slate-600 mt-0.5 font-medium">Test our neural face cleaner on any blurry or dark photo right now. Create an account anytime for 150 Free Starter Tokens!</p>
+          </div>
+        </div>
+        <button onclick="openStudioAuthModal('guest_prompt')" class="px-3.5 py-2 rounded-xl bg-white hover:bg-purple-50 text-purple-700 border border-purple-300 font-black text-xs transition shadow-sm whitespace-nowrap self-start sm:self-center cursor-pointer">
+          Sign In (150 Tokens)
+        </button>
+      </div>
+
+      <div id="face-guest-exhausted-banner" class="hidden mb-6 p-4 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50 to-pink-50 border-2 border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black text-lg shadow-md shadow-amber-500/30 flex-shrink-0">
+            🔒
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-extrabold text-slate-900 text-xs sm:text-sm">Free Trial Used (1/1 Photo Restored)</span>
+              <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase">Free Sign-Up Required</span>
+            </div>
+            <p class="text-[11px] text-slate-700 mt-0.5 font-medium">Create your free account in 10 seconds to unlock <b>150 Free Starter Tokens</b> and clean unlimited photos in 2048px HD!</p>
+          </div>
+        </div>
+        <button onclick="openStudioAuthModal('trial_exhausted')" class="btn-luminous-generate px-4 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-pink-500/25 whitespace-nowrap self-start sm:self-center cursor-pointer">
+          Claim 150 Tokens Free
+        </button>
       </div>
 
       <!-- Main Interactive Box -->
@@ -788,6 +830,113 @@
           <span>Engineered with ❤️ by <b class="text-purple-700">Awais Ahmad Bhatti</b></span>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 6. STUDIO AUTH MODAL (LOGIN / SIGNUP) -->
+  <div id="studio-auth-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white border border-purple-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+      
+      <!-- Close Button -->
+      <button onclick="closeStudioAuthModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Modal Badge & Header -->
+      <div class="text-center mb-5">
+        <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-xs font-black mb-2 shadow-sm">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-500"></i>
+          <span id="auth-modal-badge">1 Free Trial Used</span>
+        </div>
+        <h3 id="auth-modal-title" class="font-display font-black text-xl text-slate-900">
+          Unlock Unlimited Face Cleaning
+        </h3>
+        <p id="auth-modal-subtitle" class="text-xs text-slate-500 mt-1.5 leading-relaxed font-medium">
+          Create a free account in 10 seconds to claim <b class="text-purple-600">150 Free Starter Tokens</b> and clean dark or blurry photos with neural AI.
+        </p>
+      </div>
+
+      <!-- Free Gift Banner -->
+      <div class="p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl mb-4 flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
+          <i data-lucide="gift" class="w-4 h-4"></i>
+        </div>
+        <div class="text-xs">
+          <span class="font-black text-purple-800">150 Free Starter Tokens</span>
+          <p class="text-[10px] text-slate-500 font-medium">Full access to 1-Click Face Cleaner, FLUX 8K & 4K Super-Res</p>
+        </div>
+      </div>
+
+      <!-- Tab Switcher (Sign Up vs Sign In) -->
+      <div class="flex items-center bg-slate-100 p-1 rounded-2xl mb-4">
+        <button id="auth-tab-signup" onclick="switchStudioAuthTab('signup')" class="flex-1 py-2 rounded-xl text-xs font-black bg-white text-purple-700 shadow-sm transition">
+          Create Free Account
+        </button>
+        <button id="auth-tab-login" onclick="switchStudioAuthTab('login')" class="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition">
+          Sign In
+        </button>
+      </div>
+
+      <!-- SIGNUP FORM -->
+      <form id="studio-signup-form" onsubmit="handleStudioSignup(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Your Name</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="text" id="studio-signup-name" required placeholder="Awais Creator" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+          <div class="relative">
+            <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="email" id="studio-signup-email" required placeholder="you@gmail.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Create Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="studio-signup-password" minlength="4" required placeholder="At least 4 characters" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div id="studio-signup-error" class="hidden p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-bold"></div>
+
+        <button type="submit" id="studio-signup-btn" class="btn-luminous-generate w-full py-3 rounded-xl font-display font-black text-xs shadow-lg shadow-pink-500/20 flex items-center justify-center space-x-2 cursor-pointer">
+          <span>Create Account & Continue (150 Tokens)</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- LOGIN FORM -->
+      <form id="studio-login-form" onsubmit="handleStudioLogin(event)" class="space-y-3.5 hidden">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+          <div class="relative">
+            <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="email" id="studio-login-email" required placeholder="you@gmail.com" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="studio-login-password" required placeholder="Your password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-purple-500 focus:bg-white transition font-medium">
+          </div>
+        </div>
+
+        <div id="studio-login-error" class="hidden p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-bold"></div>
+
+        <button type="submit" id="studio-login-btn" class="btn-luminous-generate w-full py-3 rounded-xl font-display font-black text-xs shadow-lg shadow-purple-500/20 flex items-center justify-center space-x-2 cursor-pointer">
+          <span>Sign In & Continue</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+
     </div>
   </div>
 
