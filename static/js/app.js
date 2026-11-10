@@ -1578,6 +1578,8 @@ async function executeFaceRestore() {
       try { userId = JSON.parse(userStr).id || "usr_demo_01"; } catch(e){}
     }
 
+    const clarityMode = document.getElementById('face-clarity-mode') ? document.getElementById('face-clarity-mode').value : 'ultra';
+
     const response = await fetch('/api/restore-face', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1586,6 +1588,7 @@ async function executeFaceRestore() {
         brighten_face: autoBrighten,
         fidelity: 0.7,
         upscale: 2,
+        mode: clarityMode,
         user_id: userId
       })
     });
@@ -1609,6 +1612,18 @@ async function executeFaceRestore() {
         restoredImg.src = `${data.restored_url}?t=${Date.now()}`;
         restoredImg.classList.remove('hidden');
       }
+
+      // Populate interactive Before/After slider
+      const sliderBg = document.getElementById('face-slider-bg');
+      const sliderFg = document.getElementById('face-slider-fg');
+      const viewTabs = document.getElementById('face-view-tabs');
+      if (sliderBg) sliderBg.src = selectedFaceBase64;
+      if (sliderFg) sliderFg.src = `${data.restored_url}?t=${Date.now()}`;
+      if (viewTabs) viewTabs.classList.remove('hidden');
+
+      // Switch to interactive slider by default
+      switchFaceView('slider');
+
       if (downloadBtn) downloadBtn.classList.remove('hidden');
       if (cleanBtn) {
         cleanBtn.disabled = false;
@@ -1680,6 +1695,14 @@ function resetFaceRestore() {
   const cleanBtn = document.getElementById('face-clean-btn');
   const cleanBtnText = document.getElementById('face-clean-btn-text');
 
+  // Reset comparison slider and view tabs
+  const viewTabs = document.getElementById('face-view-tabs');
+  const sliderView = document.getElementById('face-slider-view');
+  const sideGrid = document.querySelector('#face-preview-section .grid');
+  if (viewTabs) viewTabs.classList.add('hidden');
+  if (sliderView) sliderView.classList.add('hidden');
+  if (sideGrid) sideGrid.classList.remove('hidden');
+
   if (placeholder) placeholder.classList.remove('hidden');
   if (processView) processView.classList.add('hidden');
   if (restoredImg) restoredImg.classList.add('hidden');
@@ -1690,5 +1713,62 @@ function resetFaceRestore() {
     cleanBtn.classList.remove('opacity-75', 'cursor-not-allowed');
   }
   if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
+  safeLucide();
+}
+
+function onFaceSliderInput(val) {
+  const clip = document.getElementById('face-slider-clip');
+  const handle = document.getElementById('face-slider-handle');
+  if (clip) clip.style.width = `${val}%`;
+  if (handle) handle.style.left = `${val}%`;
+}
+
+function switchFaceView(mode) {
+  const sliderView = document.getElementById('face-slider-view');
+  const sideGrid = document.querySelector('#face-preview-section .grid');
+  const sliderInner = document.getElementById('face-slider-inner');
+  const tabSlider = document.getElementById('face-tab-slider');
+  const tabSide = document.getElementById('face-tab-side');
+  const tabZoom = document.getElementById('face-tab-zoom');
+
+  // Reset tab active states
+  [tabSlider, tabSide, tabZoom].forEach(t => {
+    if (t) {
+      t.classList.remove('bg-white', 'shadow', 'text-pink-600');
+      t.classList.add('text-slate-600');
+    }
+  });
+
+  if (mode === 'slider') {
+    if (sliderView) sliderView.classList.remove('hidden');
+    if (sliderInner) sliderInner.style.transform = 'none';
+    if (sideGrid) sideGrid.classList.add('hidden');
+    if (tabSlider) {
+      tabSlider.classList.add('bg-white', 'shadow', 'text-pink-600');
+      tabSlider.classList.remove('text-slate-600');
+    }
+  } else if (mode === 'side') {
+    if (sliderView) sliderView.classList.add('hidden');
+    if (sideGrid) {
+      sideGrid.classList.remove('hidden');
+      sideGrid.style.transform = 'none';
+    }
+    if (tabSide) {
+      tabSide.classList.add('bg-white', 'shadow', 'text-pink-600');
+      tabSide.classList.remove('text-slate-600');
+    }
+  } else if (mode === 'zoom') {
+    if (sliderView) sliderView.classList.remove('hidden');
+    if (sliderInner) {
+      sliderInner.style.transform = 'scale(2.2)';
+      sliderInner.style.transformOrigin = 'center center';
+      sliderInner.style.transition = 'transform 0.3s ease';
+    }
+    if (sideGrid) sideGrid.classList.add('hidden');
+    if (tabZoom) {
+      tabZoom.classList.add('bg-white', 'shadow', 'text-pink-600');
+      tabZoom.classList.remove('text-slate-600');
+    }
+  }
   safeLucide();
 }
