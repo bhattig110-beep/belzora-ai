@@ -1578,7 +1578,7 @@ async function executeFaceRestore() {
       try { userId = JSON.parse(userStr).id || "usr_demo_01"; } catch(e){}
     }
 
-    const clarityMode = document.getElementById('face-clarity-mode') ? document.getElementById('face-clarity-mode').value : 'ultra';
+    const clarityMode = document.getElementById('face-clarity-mode') ? document.getElementById('face-clarity-mode').value : 'crystal';
 
     const response = await fetch('/api/restore-face', {
       method: 'POST',
