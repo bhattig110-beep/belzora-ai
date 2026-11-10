@@ -588,80 +588,63 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     except Exception as norm_err:
         print(f"Image normalization note: {norm_err}")
 
-    # 2. Run Neural Face Restoration (CodeFormer / GFPGAN) on Remote CPU Space (Unlimited, No ZeroGPU limit, Zero RAM on Render)
-    loop = asyncio.get_event_loop()
-    success_cf = False
-
-    req_mode = getattr(req, "mode", "crystal") or "crystal"
-    if req_mode in ["natural", "gfpgan"]:
-        selected_model = "GFPGANv1.4.pth"
-    elif req_mode in ["gpen"]:
-        selected_model = "GPEN-BFR-1024.pt"
-    else:
-        selected_model = "CodeFormer.pth"
-
-    def run_cf():
-        cf = get_codeformer_client()
-        if not cf:
-            raise Exception("Face restoration client unavailable")
-        # In avans06 space: upscale_model=None ensures fast inference (~12-15s) and only enhances faces
-        res = cf.predict(
-            gallery=[{"image": handle_file(str(orig_path))}],
-            face_restoration=selected_model,
-            upscale_model=None,
-            scale=2,
-            face_detection="retinaface_resnet50",
-            face_detection_threshold=0.5,
-            face_detection_only_center=False,
-            outputWithModelName=False,
-            save_as_png=True,
-            api_name="/inference"
-        )
-        if res and res[0] and len(res[0]) > 0:
-            item = res[0][0]
-            out_p = item["image"] if isinstance(item, dict) else item
-            shutil.copyfile(out_p, str(restored_path))
-            return True
-        raise Exception("Empty response from neural model")
-
+    # 2. Complete Professional AI Studio Image Enhancer & Skin Beautifier (100% Full Photo - Zero Cropping)
     try:
-        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=65.0)
-    except Exception as cf_err:
-        print(f"Neural face restore note: {repr(cf_err)}, using memory-safe fallback...")
-        success_cf = False
-
-    # 3. Memory-Safe Post-Processing & Proportions (Render RAM strictly < 80MB, ZERO OOM risk)
-    try:
-        base_src_path = restored_path if (success_cf and restored_path.exists()) else orig_path
-
-        with Image.open(base_src_path) as im_in:
+        with Image.open(orig_path) as im_in:
             im = im_in.convert("RGB")
             ow, oh = im.size
 
-            # Upscale proportionally to 2048px Ultra HD if not already 2048px
+            # 1. Proportional Ultra HD Upscale to 2048px (Exact Aspect Ratio Guaranteed, Never Distorts or Crops)
             max_dim = max(ow, oh)
             if max_dim < 2048:
-                ratio = 2048.0 / max(1, max_dim)
-                target_w = max(64, int(ow * ratio))
-                target_h = max(64, int(oh * ratio))
-                im = im.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                ratio = 2048.0 / max_dim
+                tw = max(64, int(ow * ratio))
+                th = max(64, int(oh * ratio))
+                im_up = im.resize((tw, th), Image.Resampling.LANCZOS)
+            else:
+                im_up = im
+                tw, th = ow, oh
 
-            # Auto-brighten dark shadowed faces if requested
-            if req.brighten_face or req_mode == "glow":
-                stat = ImageStat.Stat(im)
-                luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
-                if luma < 120:
-                    bright_factor = 1.06 if luma < 90 else 1.03
-                    im = ImageEnhance.Brightness(im).enhance(bright_factor)
-                im = ImageEnhance.Contrast(im).enhance(1.03)
+            # 2. Studio Skin Whitening, Face Shadow Clearing & Fair Radiance
+            arr = np.array(im_up, dtype=np.float32)
 
-            # Fallback gentle sharpen if neural model was unavailable (NO heavy MedianFilter to protect Render 512MB RAM)
-            if not success_cf:
-                im = im.filter(ImageFilter.UnsharpMask(radius=1.3, percent=80, threshold=4))
+            # Perceived Luminance
+            luma = 0.299 * arr[:, :, 0] + 0.587 * arr[:, :, 1] + 0.114 * arr[:, :, 2]
 
-            im.save(restored_path, format="PNG")
-            fin_w, fin_h = im.size
-            del im
+            # Detect Skin & Face Tones
+            r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+            skin_mask = (r > 50) & (g > 30) & (b > 15) & (r > b) & ((r - g) >= 4) & ((r - b) >= 6)
+
+            # Shadow lift specifically on faces and dark underexposed areas
+            shadow_lift = np.clip((195.0 - luma) / 195.0, 0, 1.0) ** 1.2
+            skin_factor = skin_mask.astype(np.float32) * shadow_lift
+
+            # Professional skin whitening & fair radiant glow:
+            # Lift Red moderately, Green slightly more (removes red blemishes), Blue most (whitens yellow tan/mud)
+            arr[:, :, 0] = np.clip(arr[:, :, 0] + skin_factor * 26.0 + shadow_lift * 14.0, 0, 255)
+            arr[:, :, 1] = np.clip(arr[:, :, 1] + skin_factor * 28.0 + shadow_lift * 15.0, 0, 255)
+            arr[:, :, 2] = np.clip(arr[:, :, 2] + skin_factor * 33.0 + shadow_lift * 16.0, 0, 255)
+
+            im_enhanced = Image.fromarray(arr.astype(np.uint8))
+
+            # 3. Professional Studio Contrast & Vibrancy (Pata chalay ke high-end photo editing hui hai!)
+            im_enhanced = ImageEnhance.Color(im_enhanced).enhance(1.10)
+            im_enhanced = ImageEnhance.Contrast(im_enhanced).enhance(1.12)
+
+            # 4. Razor-Sharp Acutance (Eyes, hair, clothes, and facial contours pop with zero blur)
+            crisp_im = im_enhanced.filter(ImageFilter.UnsharpMask(radius=1.5, percent=130, threshold=3))
+
+            # Save clean final output
+            crisp_im.save(restored_path, format="PNG")
+            fin_w, fin_h = crisp_im.size
+            del arr, im_up, im_enhanced, crisp_im
+    except Exception as enh_err:
+        print(f"Complete enhancement note: {enh_err}")
+        shutil.copyfile(orig_path, restored_path)
+        with Image.open(restored_path) as im_fallback:
+            fin_w, fin_h = im_fallback.size
+    finally:
+        gc.collect()
 
         # Save to database
         creation_data = {
