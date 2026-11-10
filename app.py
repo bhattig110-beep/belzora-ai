@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from gradio_client import Client, handle_file
 from dotenv import load_dotenv
 from PIL import Image, ImageEnhance, ImageFilter, ImageStat
+import numpy as np
 
 try:
     from pillow_heif import register_heif_opener
@@ -141,6 +142,7 @@ class RestoreFaceRequest(BaseModel):
     brighten_face: Optional[bool] = True
     fidelity: Optional[float] = 0.6
     upscale: Optional[int] = 2
+    mode: Optional[str] = "ultra"
     user_id: Optional[str] = "usr_demo_01"
 
 class FavoriteRequest(BaseModel):
@@ -598,50 +600,67 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
         return True
 
     try:
-        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=95.0)
+        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=10.0)
     except Exception as cf_err:
-        print(f"CodeFormer restore note: {cf_err}, using smart neural fallback...")
+        print(f"CodeFormer restore note: {cf_err}, using smart studio acutance engine...")
         success_cf = False
 
-    # 3. Fallback or post-enhancement if CodeFormer succeeded or failed
+    # 3. High-Acutance Studio Restoration & Frequency Separation (Guaranteed WOW Effect)
     try:
-        if not success_cf or not restored_path.exists():
-            with Image.open(orig_path) as src_im:
-                src_im = src_im.convert("RGB")
-                w, h = src_im.size
-                scale = req.upscale or 2
-                target_w = min(2048, w * scale)
-                target_h = int(h * (target_w / max(1, w)))
-                upscaled = src_im.resize((target_w, target_h), Image.Resampling.LANCZOS)
-                upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=1.5, percent=100, threshold=2))
-                upscaled.save(restored_path, format="PNG")
-        else:
-            # CodeFormer succeeded: verify aspect ratio matches original and scale smoothly if needed
-            with Image.open(restored_path) as im_res:
-                rw, rh = im_res.size
-                # If CodeFormer output is smaller than 2048 on long edge, upscale proportionally
-                if max(rw, rh) < 1800:
-                    ratio = 2048.0 / max(rw, rh)
-                    new_w = max(64, int(rw * ratio))
-                    new_h = max(64, int(rh * ratio))
-                    im_up = im_res.resize((new_w, new_h), Image.Resampling.LANCZOS)
-                    im_up.save(restored_path, format="PNG")
+        base_src_path = restored_path if (success_cf and restored_path.exists()) else orig_path
 
-        # 4. Natural Skin Beautification: CodeFormer output is already photorealistic and sharp.
-        # Only apply very subtle, natural luminance adjustment if face is genuinely dark (luma < 90)
-        with Image.open(restored_path) as im_check:
-            im = im_check.convert("RGB")
-            stat = ImageStat.Stat(im)
+        with Image.open(base_src_path) as im_in:
+            im = im_in.convert("RGB")
+            ow, oh = im.size
+            
+            # Upscale proportionally to 2048px Ultra HD if not already 2048px
+            max_dim = max(ow, oh)
+            if max_dim < 2048:
+                ratio = 2048.0 / max(1, max_dim)
+                target_w = max(64, int(ow * ratio))
+                target_h = max(64, int(oh * ratio))
+                im_up = im.resize((target_w, target_h), Image.Resampling.LANCZOS)
+            else:
+                im_up = im
+
+            # High-Pass Frequency Separation for crisp facial details (eyes, beard, pores, fabric)
+            blur = im_up.filter(ImageFilter.GaussianBlur(radius=2.0))
+            arr_orig = np.array(im_up, dtype=np.float32)
+            arr_blur = np.array(blur, dtype=np.float32)
+
+            high_pass = arr_orig - arr_blur
+
+            mode = getattr(req, "mode", "ultra") or "ultra"
+            if mode == "ultra":
+                boost = 1.70
+                mask_percent = 145
+                contrast_factor = 1.07
+            elif mode == "glow":
+                boost = 1.40
+                mask_percent = 120
+                contrast_factor = 1.05
+            else:  # balanced
+                boost = 1.45
+                mask_percent = 130
+                contrast_factor = 1.06
+
+            arr_crisp = arr_orig + high_pass * boost
+            arr_crisp = np.clip(arr_crisp, 0, 255).astype(np.uint8)
+            crisp_im = Image.fromarray(arr_crisp)
+
+            # Fine photographic acutance
+            crisp_im = crisp_im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=mask_percent, threshold=2))
+            crisp_im = ImageEnhance.Contrast(crisp_im).enhance(contrast_factor)
+
+            # Natural luminance brightening if requested or dark photo
+            stat = ImageStat.Stat(crisp_im)
             luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
+            if req.brighten_face or luma < 100:
+                bright_factor = 1.08 if luma < 90 else 1.04
+                crisp_im = ImageEnhance.Brightness(crisp_im).enhance(bright_factor)
 
-            if req.brighten_face and luma < 90:
-                # Genuinely dark photo: gentle natural boost without orange saturation
-                im = ImageEnhance.Brightness(im).enhance(1.08)
-                im = ImageEnhance.Contrast(im).enhance(1.03)
-                im.save(restored_path, format="PNG")
-
-        with Image.open(restored_path) as im_fin:
-            fin_w, fin_h = im_fin.size
+            crisp_im.save(restored_path, format="PNG")
+            fin_w, fin_h = crisp_im.size
 
         # Save to database
         creation_data = {
