@@ -547,17 +547,73 @@
           
           <!-- Quick Control Options -->
           <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-6">
-            <label class="flex items-center space-x-3 cursor-pointer select-none">
-              <input type="checkbox" id="face-auto-brighten" checked class="w-4 h-4 text-pink-600 rounded accent-pink-600 cursor-pointer">
-              <div class="text-xs">
-                <span class="font-extrabold text-slate-800">Auto-Brighten Dark Face & Shadows</span>
-                <p class="text-slate-500 text-[11px]">Automatically detects dark faces & boosts luminance + warm skin glow</p>
+            <div class="flex items-center space-x-4 flex-wrap gap-y-2">
+              <label class="flex items-center space-x-2.5 cursor-pointer select-none">
+                <input type="checkbox" id="face-auto-brighten" checked class="w-4 h-4 text-pink-600 rounded accent-pink-600 cursor-pointer">
+                <span class="text-xs font-black text-slate-800">Auto-Brighten Shadowed Faces</span>
+              </label>
+
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-bold text-slate-500">Clarity Engine:</span>
+                <select id="face-clarity-mode" class="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500 cursor-pointer shadow-sm">
+                  <option value="ultra" selected>✨ Remini Pro Ultra-Sharp (Deep Eye & Beard Detail)</option>
+                  <option value="balanced">💎 Balanced Crystal HD (Natural Skin)</option>
+                  <option value="glow">🌟 Studio Face Glow & Brighten</option>
+                </select>
               </div>
-            </label>
+            </div>
             
             <div class="flex items-center space-x-2">
               <span class="text-xs font-bold text-slate-600">Resolution:</span>
-              <span class="px-2.5 py-1 rounded-xl bg-purple-100 text-purple-700 font-extrabold text-xs">2048px Ultra HD</span>
+              <span class="px-2.5 py-1 rounded-xl bg-pink-100 text-pink-700 font-black text-xs">2048px Ultra HD</span>
+            </div>
+          </div>
+
+          <!-- View Switcher Tabs: Before/After Slider vs Side-by-Side vs Face Zoom -->
+          <div id="face-view-tabs" class="hidden flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold">
+              <button id="face-tab-slider" onclick="switchFaceView('slider')" class="px-4 py-1.5 rounded-lg bg-white shadow text-pink-600 font-extrabold flex items-center space-x-1.5 transition cursor-pointer">
+                <i data-lucide="split" class="w-3.5 h-3.5"></i>
+                <span>Before / After Slider 🎚️</span>
+              </button>
+              <button id="face-tab-side" onclick="switchFaceView('side')" class="px-4 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-extrabold flex items-center space-x-1.5 transition cursor-pointer">
+                <i data-lucide="columns" class="w-3.5 h-3.5"></i>
+                <span>Side by Side</span>
+              </button>
+              <button id="face-tab-zoom" onclick="switchFaceView('zoom')" class="px-4 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-extrabold flex items-center space-x-1.5 transition cursor-pointer">
+                <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i>
+                <span>Face Zoom (2.5x) 🔍</span>
+              </button>
+            </div>
+            <span class="text-xs font-medium text-slate-500">Drag slider left/right across faces to see the HD difference</span>
+          </div>
+
+          <!-- 1. INTERACTIVE BEFORE/AFTER SPLIT SLIDER VIEW -->
+          <div id="face-slider-view" class="hidden relative rounded-2xl overflow-hidden border-2 border-pink-300 bg-slate-950 mb-6 select-none shadow-xl max-h-[500px]">
+            <div id="face-slider-inner" class="relative w-full h-[440px] overflow-hidden flex items-center justify-center">
+              <!-- Background / Original Image -->
+              <img id="face-slider-bg" src="" alt="Original Photo" class="absolute inset-0 w-full h-full object-contain pointer-events-none">
+              <div class="absolute top-4 left-4 px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-wider z-10 pointer-events-none shadow">
+                Original (Before)
+              </div>
+
+              <!-- Foreground / Restored Image (Clipped by slider width) -->
+              <div id="face-slider-clip" class="absolute inset-y-0 left-0 overflow-hidden pointer-events-none border-r-2 border-white shadow-[0_0_20px_rgba(255,255,255,0.9)] z-10" style="width: 50%;">
+                <img id="face-slider-fg" src="" alt="Restored Photo" class="absolute inset-0 h-full object-contain pointer-events-none" style="width: 100vw; max-width: none;">
+                <div class="absolute top-4 right-4 px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[11px] font-black uppercase tracking-wider shadow-lg">
+                  ✨ Belzora Ultra HD (After)
+                </div>
+              </div>
+
+              <!-- Draggable Center Handle Bar -->
+              <div id="face-slider-handle" class="absolute inset-y-0 w-8 -ml-4 flex items-center justify-center z-20 pointer-events-none" style="left: 50%;">
+                <div class="w-9 h-9 rounded-full bg-white shadow-2xl border-2 border-pink-500 flex items-center justify-center text-pink-600">
+                  <i data-lucide="chevrons-left-right" class="w-4 h-4"></i>
+                </div>
+              </div>
+
+              <!-- Drag range input over entire container -->
+              <input type="range" id="face-slider-input" min="0" max="100" value="50" oninput="onFaceSliderInput(this.value)" class="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30">
             </div>
           </div>
 
