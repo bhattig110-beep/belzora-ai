@@ -9,6 +9,7 @@ import base64
 import hashlib
 import urllib.parse
 import urllib.request
+import gc
 from io import BytesIO
 from typing import Optional, List
 from pathlib import Path
@@ -508,9 +509,8 @@ async def upscale_image(req: UpscaleRequest):
             upscaled = ImageEnhance.Contrast(upscaled).enhance(1.05)
             upscaled.save(upscaled_path, format="PNG")
         
-        # Determine dimensions
-        im_done = Image.open(upscaled_path)
-        fin_w, fin_h = im_done.size
+        with Image.open(upscaled_path) as im_done:
+            fin_w, fin_h = im_done.size
         
         # Update record in database
         target_item["url"] = f"/outputs/{upscaled_filename}"
@@ -527,6 +527,8 @@ async def upscale_image(req: UpscaleRequest):
     except Exception as e:
         print(f"Upscaling error: {e}")
         raise HTTPException(status_code=500, detail=f"Upscaling failed: {str(e)}")
+    finally:
+        gc.collect()
 
 # 2. DEDICATED 1-CLICK AI FACE CLEANER, BRIGHTENER & NEURAL RESTORER
 @app.post("/api/restore-face")
@@ -623,9 +625,10 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             im = ImageEnhance.Color(im).enhance(1.08)  # Natural warm skin glow
             im = im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=125, threshold=2))
             im.save(restored_path, format="PNG")
+            im.close()
 
-        im_fin = Image.open(restored_path)
-        fin_w, fin_h = im_fin.size
+        with Image.open(restored_path) as im_fin:
+            fin_w, fin_h = im_fin.size
 
         # Save to database
         creation_data = {
@@ -655,6 +658,8 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Enhancement error: {e}")
+    finally:
+        gc.collect()
 
 # 2. FAVORITE TOGGLE (Heart/Star creations)
 @app.post("/api/history/favorite")
