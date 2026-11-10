@@ -1283,7 +1283,7 @@ function isImageFile(file) {
   return validExtensions.some(ext => name.endsWith(ext));
 }
 
-function resizeImageBlob(blobOrFile, maxDimension = 1280) {
+function resizeImageBlob(blobOrFile, maxDimension = 1024) {
   return new Promise((resolve) => {
     try {
       const img = new Image();
@@ -1371,9 +1371,9 @@ async function loadFaceFile(file) {
     }
   }
 
-  // Optimize & resize blob to max 1280px for instant upload & fast GPU inference
+  // Optimize & resize blob to max 1024px for instant upload & fast GPU inference (3-4s)
   try {
-    targetBlob = await resizeImageBlob(targetBlob, 1280);
+    targetBlob = await resizeImageBlob(targetBlob, 1024);
   } catch (resizeErr) {
     console.warn("Resize notice:", resizeErr);
   }
@@ -1551,25 +1551,25 @@ async function executeFaceRestore() {
   }
 
   // Animated status progress
-  let progress = 15;
+  let progress = 20;
   if (progressBar) progressBar.style.width = `${progress}%`;
   
   const progressInterval = setInterval(() => {
-    if (progress < 40) {
-      progress += 8;
+    if (progress < 50) {
+      progress += 12;
       if (processTitle) processTitle.textContent = "Detecting Facial Landmarks...";
       if (processSub) processSub.textContent = "Aligning eyes, nose, lips and facial contours...";
-    } else if (progress < 75) {
-      progress += 5;
+    } else if (progress < 85) {
+      progress += 8;
       if (processTitle) processTitle.textContent = "Neural Pixel Reconstruction...";
       if (processSub) processSub.textContent = "Restoring blurry pupils, eyebrows, teeth & skin texture via CodeFormer...";
-    } else if (progress < 92) {
-      progress += 2;
+    } else if (progress < 95) {
+      progress += 3;
       if (processTitle) processTitle.textContent = "Auto-Luminance & 2048px Super-Res...";
       if (processSub) processSub.textContent = "Clearing dark shadows and balancing skin tone vibrancy...";
     }
     if (progressBar) progressBar.style.width = `${progress}%`;
-  }, 1100);
+  }, 400);
 
   try {
     const userStr = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
