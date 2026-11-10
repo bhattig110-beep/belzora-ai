@@ -1108,12 +1108,57 @@ function isImageFile(file) {
   return validExtensions.some(ext => name.endsWith(ext));
 }
 
-function loadFaceFile(file) {
+async function loadFaceFile(file) {
   if (!file) return;
   if (!isImageFile(file)) {
-    alert("Please upload a valid image file (JPG, PNG, or WEBP).");
+    alert("Please upload a valid image file (JPG, PNG, WEBP, or HEIC).");
     return;
   }
+
+  const fileName = (file.name || '').toLowerCase();
+  const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+
+  // Immediately show preview section with converting status if HEIC
+  const uploadZone = document.getElementById('face-upload-zone');
+  const previewSection = document.getElementById('face-preview-section');
+  const badge = document.getElementById('face-status-badge');
+  const placeholder = document.getElementById('face-result-placeholder');
+  const processView = document.getElementById('face-processing-view');
+  const restoredImg = document.getElementById('face-restored-img');
+  const downloadBtn = document.getElementById('face-download-btn');
+  const cleanBtn = document.getElementById('face-clean-btn');
+  const cleanBtnText = document.getElementById('face-clean-btn-text');
+
+  if (uploadZone) uploadZone.classList.add('hidden');
+  if (previewSection) previewSection.classList.remove('hidden');
+  if (placeholder) placeholder.classList.remove('hidden');
+  if (processView) processView.classList.add('hidden');
+  if (restoredImg) restoredImg.classList.add('hidden');
+  if (downloadBtn) downloadBtn.classList.add('hidden');
+
+  let targetBlob = file;
+
+  if (isHeic) {
+    if (badge) {
+      badge.textContent = 'Converting iPhone HEIC...';
+      badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 animate-pulse';
+    }
+    if (cleanBtn) cleanBtn.disabled = true;
+
+    try {
+      if (typeof heic2any !== 'undefined') {
+        const converted = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.92
+        });
+        targetBlob = Array.isArray(converted) ? converted[0] : converted;
+      }
+    } catch (heicErr) {
+      console.warn("HEIC browser conversion notice:", heicErr);
+    }
+  }
+
   const reader = new FileReader();
   reader.onload = function(e) {
     let result = e.target.result;
@@ -1127,31 +1172,14 @@ function loadFaceFile(file) {
     const origImg = document.getElementById('face-original-img');
     if (origImg) origImg.src = selectedFaceBase64;
 
-    const uploadZone = document.getElementById('face-upload-zone');
-    const previewSection = document.getElementById('face-preview-section');
-    if (uploadZone) uploadZone.classList.add('hidden');
-    if (previewSection) previewSection.classList.remove('hidden');
-
-    const placeholder = document.getElementById('face-result-placeholder');
-    const processView = document.getElementById('face-processing-view');
-    const restoredImg = document.getElementById('face-restored-img');
-    const downloadBtn = document.getElementById('face-download-btn');
-    const cleanBtn = document.getElementById('face-clean-btn');
-    const cleanBtnText = document.getElementById('face-clean-btn-text');
-
-    if (placeholder) placeholder.classList.remove('hidden');
-    if (processView) processView.classList.add('hidden');
-    if (restoredImg) restoredImg.classList.add('hidden');
-    if (downloadBtn) downloadBtn.classList.add('hidden');
     if (cleanBtn) {
       cleanBtn.classList.remove('hidden', 'opacity-75', 'cursor-not-allowed');
       cleanBtn.disabled = false;
     }
     if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
 
-    const badge = document.getElementById('face-status-badge');
     if (badge) {
-      badge.textContent = 'Ready to Clean';
+      badge.textContent = isHeic ? 'iPhone Photo Ready • Click Clean' : 'Ready to Clean';
       badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600';
     }
     safeLucide();
@@ -1159,7 +1187,7 @@ function loadFaceFile(file) {
   reader.onerror = function() {
     alert("Could not read file. Please try another image.");
   };
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(targetBlob);
 }
 
 function handleFacePhotoSelect(event) {
