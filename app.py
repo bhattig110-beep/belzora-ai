@@ -315,6 +315,20 @@ async def studio_page():
             return f.read()
     return "<h1>Studio is loading...</h1>"
 
+@app.get("/robots.txt", include_in_schema=False)
+async def get_robots():
+    robots_file = BASE_DIR / "robots.txt"
+    if robots_file.exists():
+        return FileResponse(robots_file, media_type="text/plain")
+    return HTMLResponse(content="User-agent: *\nAllow: /\nSitemap: https://belzoraai.com/sitemap.xml\n", media_type="text/plain")
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def get_sitemap():
+    sitemap_file = BASE_DIR / "sitemap.xml"
+    if sitemap_file.exists():
+        return FileResponse(sitemap_file, media_type="application/xml")
+    raise HTTPException(status_code=404, detail="Sitemap not found")
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     fav_file = STATIC_DIR / "favicon.ico"
