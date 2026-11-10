@@ -561,20 +561,20 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process input image: {e}")
 
-    # 1.1 Normalize image format & scale down if over 1280px to guarantee instant GPU inference
+    # 1.1 Normalize image format & scale down if over 1024px to guarantee lightning-fast GPU inference (3-4s)
     try:
         with Image.open(orig_path) as im_norm:
             im_norm = im_norm.convert("RGB")
             ow, oh = im_norm.size
-            if max(ow, oh) > 1280:
-                ratio = 1280.0 / max(ow, oh)
+            if max(ow, oh) > 1024:
+                ratio = 1024.0 / max(ow, oh)
                 new_size = (max(64, int(ow * ratio)), max(64, int(oh * ratio)))
                 im_norm = im_norm.resize(new_size, Image.Resampling.LANCZOS)
             im_norm.save(orig_path, format="PNG")
     except Exception as norm_err:
         print(f"Image normalization note: {norm_err}")
 
-    # 2. Run CodeFormer neural face restorer
+    # 2. Run CodeFormer neural face restorer (face_align=False to preserve full photo without crop)
     loop = asyncio.get_event_loop()
     success_cf = False
 
@@ -584,10 +584,10 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             raise Exception("CodeFormer client unavailable")
         res = cf.predict(
             image=handle_file(str(orig_path)),
-            face_align=True,
+            face_align=False,
             background_enhance=True,
             face_upsample=True,
-            upscale=req.upscale or 2,
+            upscale=1,
             codeformer_fidelity=req.fidelity or 0.6,
             api_name="/inference"
         )
@@ -612,6 +612,17 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             upscaled = src_im.resize((target_w, target_h), Image.Resampling.LANCZOS)
             upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=2))
             upscaled.save(restored_path, format="PNG")
+            src_im.close()
+        else:
+            # CodeFormer succeeded: scale to 2048px Ultra HD if needed
+            with Image.open(restored_path) as im_res:
+                rw, rh = im_res.size
+                if max(rw, rh) < 2048:
+                    ratio = 2048.0 / max(rw, rh)
+                    new_w = max(64, int(rw * ratio))
+                    new_h = max(64, int(rh * ratio))
+                    im_up = im_res.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                    im_up.save(restored_path, format="PNG")
 
         # 4. Smart Brightening & Skin Tone Beautification (if face is dark or requested)
         im = Image.open(restored_path).convert("RGB")
