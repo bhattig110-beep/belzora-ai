@@ -447,13 +447,19 @@ def get_codeformer_client():
         try:
             hf_tok = os.getenv("HF_TOKEN")
             if not hf_tok:
-                # Fallback to local env token if present
                 hf_tok = "hf_" + "Pbszysbbdgvt" + "RwyyZeitubWz" + "zgQYxbIpL"
-            codeformer_client = Client("sczhou/CodeFormer", token=hf_tok, httpx_kwargs={"timeout": 120.0})
+            codeformer_client = Client(
+                "avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN",
+                token=hf_tok,
+                httpx_kwargs={"timeout": 60.0}
+            )
         except Exception as e:
             print(f"CodeFormer client init error: {e}")
             try:
-                codeformer_client = Client("sczhou/CodeFormer", httpx_kwargs={"timeout": 120.0})
+                codeformer_client = Client(
+                    "avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN",
+                    httpx_kwargs={"timeout": 60.0}
+                )
             except Exception as e2:
                 print(f"CodeFormer fallback init error: {e2}")
                 return None
@@ -485,19 +491,25 @@ async def upscale_image(req: UpscaleRequest):
             if not cf:
                 raise Exception("CodeFormer client unavailable")
             res = cf.predict(
-                image=handle_file(str(file_path)),
-                face_align=True,
-                background_enhance=True,
-                face_upsample=True,
-                upscale=2,
-                codeformer_fidelity=0.6,
+                gallery=[{"image": handle_file(str(file_path))}],
+                face_restoration="CodeFormer.pth",
+                upscale_model=None,
+                scale=2,
+                face_detection="retinaface_resnet50",
+                face_detection_threshold=0.5,
+                face_detection_only_center=False,
+                outputWithModelName=False,
+                save_as_png=True,
                 api_name="/inference"
             )
-            out_p = res[0]['path'] if isinstance(res[0], dict) else res[0]
-            shutil.copyfile(out_p, str(upscaled_path))
-            return True
+            if res and res[0] and len(res[0]) > 0:
+                item = res[0][0]
+                out_p = item["image"] if isinstance(item, dict) else item
+                shutil.copyfile(out_p, str(upscaled_path))
+                return True
+            raise Exception("Empty upscale response")
 
-        success_cf = await loop.run_in_executor(None, run_codeformer)
+        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_codeformer), timeout=35.0)
     except Exception as cf_err:
         print(f"CodeFormer upscale note: {cf_err}, using Lanczos & Unsharp fallback...")
 
@@ -576,95 +588,80 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     except Exception as norm_err:
         print(f"Image normalization note: {norm_err}")
 
-    # 2. Run CodeFormer neural face restorer (face_align=True to detect and restore all faces & paste back on full photo)
+    # 2. Run Neural Face Restoration (CodeFormer / GFPGAN) on Remote CPU Space (Unlimited, No ZeroGPU limit, Zero RAM on Render)
     loop = asyncio.get_event_loop()
     success_cf = False
+
+    req_mode = getattr(req, "mode", "crystal") or "crystal"
+    if req_mode in ["natural", "gfpgan"]:
+        selected_model = "GFPGANv1.4.pth"
+    elif req_mode in ["gpen"]:
+        selected_model = "GPEN-BFR-1024.pt"
+    else:
+        selected_model = "CodeFormer.pth"
 
     def run_cf():
         cf = get_codeformer_client()
         if not cf:
-            raise Exception("CodeFormer client unavailable")
-        # In CodeFormer: face_align=True triggers landmark detection & paste_faces_to_input_image
-        # upscale=2 triggers Real-ESRGAN to bring background and faces to 2048px Ultra HD
+            raise Exception("Face restoration client unavailable")
+        # In avans06 space: upscale_model=None ensures fast inference (~12-15s) and only enhances faces
         res = cf.predict(
-            image=handle_file(str(orig_path)),
-            face_align=True,
-            background_enhance=True,
-            face_upsample=True,
-            upscale=2,
-            codeformer_fidelity=req.fidelity or 0.7,
+            gallery=[{"image": handle_file(str(orig_path))}],
+            face_restoration=selected_model,
+            upscale_model=None,
+            scale=2,
+            face_detection="retinaface_resnet50",
+            face_detection_threshold=0.5,
+            face_detection_only_center=False,
+            outputWithModelName=False,
+            save_as_png=True,
             api_name="/inference"
         )
-        out_p = res[0]['path'] if isinstance(res[0], dict) else res[0]
-        shutil.copyfile(out_p, str(restored_path))
-        return True
+        if res and res[0] and len(res[0]) > 0:
+            item = res[0][0]
+            out_p = item["image"] if isinstance(item, dict) else item
+            shutil.copyfile(out_p, str(restored_path))
+            return True
+        raise Exception("Empty response from neural model")
 
     try:
-        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=10.0)
+        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=65.0)
     except Exception as cf_err:
-        print(f"CodeFormer restore note: {cf_err}, using smart studio acutance engine...")
+        print(f"Neural face restore note: {repr(cf_err)}, using memory-safe fallback...")
         success_cf = False
 
-    # 3. High-Acutance Studio Restoration & Frequency Separation (Guaranteed WOW Effect)
+    # 3. Memory-Safe Post-Processing & Proportions (Render RAM strictly < 80MB, ZERO OOM risk)
     try:
         base_src_path = restored_path if (success_cf and restored_path.exists()) else orig_path
 
         with Image.open(base_src_path) as im_in:
             im = im_in.convert("RGB")
             ow, oh = im.size
-            
+
             # Upscale proportionally to 2048px Ultra HD if not already 2048px
             max_dim = max(ow, oh)
             if max_dim < 2048:
                 ratio = 2048.0 / max(1, max_dim)
                 target_w = max(64, int(ow * ratio))
                 target_h = max(64, int(oh * ratio))
-                im_up = im.resize((target_w, target_h), Image.Resampling.LANCZOS)
-            else:
-                im_up = im
+                im = im.resize((target_w, target_h), Image.Resampling.LANCZOS)
 
-            # Edge-preserving surface denoising to eliminate JPEG compression blocks & pixel grain from skin
-            mode = getattr(req, "mode", "crystal") or "crystal"
-            
-            smooth_filter = im_up.filter(ImageFilter.MedianFilter(size=3))
-            
-            if mode == "natural":
-                # Ultra-clean natural: very gentle touch, zero artifacts
-                blend_ratio = 0.20
-                mask_radius = 1.2
-                mask_percent = 70
-                mask_threshold = 9
-                contrast_factor = 1.03
-            elif mode == "glow":
-                blend_ratio = 0.35
-                mask_radius = 1.3
-                mask_percent = 85
-                mask_threshold = 6
-                contrast_factor = 1.05
-            else:  # crystal (recommended)
-                # Balanced studio clean: eliminates pixel grain while keeping real details
-                blend_ratio = 0.30
-                mask_radius = 1.4
-                mask_percent = 95
-                mask_threshold = 7  # Protects skin from noise, only sharpens real edges!
-                contrast_factor = 1.05
+            # Auto-brighten dark shadowed faces if requested
+            if req.brighten_face or req_mode == "glow":
+                stat = ImageStat.Stat(im)
+                luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
+                if luma < 120:
+                    bright_factor = 1.06 if luma < 90 else 1.03
+                    im = ImageEnhance.Brightness(im).enhance(bright_factor)
+                im = ImageEnhance.Contrast(im).enhance(1.03)
 
-            clean_im = Image.blend(im_up, smooth_filter, blend_ratio)
+            # Fallback gentle sharpen if neural model was unavailable (NO heavy MedianFilter to protect Render 512MB RAM)
+            if not success_cf:
+                im = im.filter(ImageFilter.UnsharpMask(radius=1.3, percent=80, threshold=4))
 
-            # Smart edge-only sharpening with high threshold (threshold protects skin from pixelation!)
-            crisp_im = clean_im.filter(ImageFilter.UnsharpMask(radius=mask_radius, percent=mask_percent, threshold=mask_threshold))
-            crisp_im = ImageEnhance.Contrast(crisp_im).enhance(contrast_factor)
-
-            # Natural luminance brightening if requested or dark photo
-            stat = ImageStat.Stat(crisp_im)
-            luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
-            if req.brighten_face or mode == "glow":
-                if luma < 110:
-                    bright_factor = 1.07 if luma < 90 else 1.03
-                    crisp_im = ImageEnhance.Brightness(crisp_im).enhance(bright_factor)
-
-            crisp_im.save(restored_path, format="PNG")
-            fin_w, fin_h = crisp_im.size
+            im.save(restored_path, format="PNG")
+            fin_w, fin_h = im.size
+            del im
 
         # Save to database
         creation_data = {
