@@ -329,6 +329,11 @@ async def get_sitemap():
         return FileResponse(sitemap_file, media_type="application/xml")
     raise HTTPException(status_code=404, detail="Sitemap not found")
 
+@app.get("/google6f98b56ca74d79a0.html", include_in_schema=False)
+@app.get("/google{ver_id}.html", include_in_schema=False)
+async def google_verification_file(ver_id: str = "6f98b56ca74d79a0"):
+    return HTMLResponse(content=f"google-site-verification: google{ver_id}.html", media_type="text/html")
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     fav_file = STATIC_DIR / "favicon.ico"
