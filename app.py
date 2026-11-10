@@ -623,41 +623,45 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             else:
                 im_up = im
 
-            # High-Pass Frequency Separation for crisp facial details (eyes, beard, pores, fabric)
-            blur = im_up.filter(ImageFilter.GaussianBlur(radius=2.0))
-            arr_orig = np.array(im_up, dtype=np.float32)
-            arr_blur = np.array(blur, dtype=np.float32)
-
-            high_pass = arr_orig - arr_blur
-
-            mode = getattr(req, "mode", "ultra") or "ultra"
-            if mode == "ultra":
-                boost = 1.70
-                mask_percent = 145
-                contrast_factor = 1.07
+            # Edge-preserving surface denoising to eliminate JPEG compression blocks & pixel grain from skin
+            mode = getattr(req, "mode", "crystal") or "crystal"
+            
+            smooth_filter = im_up.filter(ImageFilter.MedianFilter(size=3))
+            
+            if mode == "natural":
+                # Ultra-clean natural: very gentle touch, zero artifacts
+                blend_ratio = 0.20
+                mask_radius = 1.2
+                mask_percent = 70
+                mask_threshold = 9
+                contrast_factor = 1.03
             elif mode == "glow":
-                boost = 1.40
-                mask_percent = 120
+                blend_ratio = 0.35
+                mask_radius = 1.3
+                mask_percent = 85
+                mask_threshold = 6
                 contrast_factor = 1.05
-            else:  # balanced
-                boost = 1.45
-                mask_percent = 130
-                contrast_factor = 1.06
+            else:  # crystal (recommended)
+                # Balanced studio clean: eliminates pixel grain while keeping real details
+                blend_ratio = 0.30
+                mask_radius = 1.4
+                mask_percent = 95
+                mask_threshold = 7  # Protects skin from noise, only sharpens real edges!
+                contrast_factor = 1.05
 
-            arr_crisp = arr_orig + high_pass * boost
-            arr_crisp = np.clip(arr_crisp, 0, 255).astype(np.uint8)
-            crisp_im = Image.fromarray(arr_crisp)
+            clean_im = Image.blend(im_up, smooth_filter, blend_ratio)
 
-            # Fine photographic acutance
-            crisp_im = crisp_im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=mask_percent, threshold=2))
+            # Smart edge-only sharpening with high threshold (threshold protects skin from pixelation!)
+            crisp_im = clean_im.filter(ImageFilter.UnsharpMask(radius=mask_radius, percent=mask_percent, threshold=mask_threshold))
             crisp_im = ImageEnhance.Contrast(crisp_im).enhance(contrast_factor)
 
             # Natural luminance brightening if requested or dark photo
             stat = ImageStat.Stat(crisp_im)
             luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
-            if req.brighten_face or luma < 100:
-                bright_factor = 1.08 if luma < 90 else 1.04
-                crisp_im = ImageEnhance.Brightness(crisp_im).enhance(bright_factor)
+            if req.brighten_face or mode == "glow":
+                if luma < 110:
+                    bright_factor = 1.07 if luma < 90 else 1.03
+                    crisp_im = ImageEnhance.Brightness(crisp_im).enhance(bright_factor)
 
             crisp_im.save(restored_path, format="PNG")
             fin_w, fin_h = crisp_im.size
