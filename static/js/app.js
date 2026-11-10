@@ -1272,141 +1272,51 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 // =========================================================================
+// =========================================================================
 // 1-CLICK AI FACE CLEANER, BRIGHTENER & NEURAL RESTORER ENGINE
 // =========================================================================
 
-function isImageFile(file) {
-  if (!file) return false;
-  if (file.type && file.type.startsWith('image/')) return true;
-  const name = (file.name || '').toLowerCase();
-  const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.jfif', '.bmp', '.heic', '.heif', '.gif', '.tif', '.tiff'];
-  return validExtensions.some(ext => name.endsWith(ext));
-}
-
-function resizeImageBlob(blobOrFile, maxDimension = 1024) {
-  return new Promise((resolve) => {
-    try {
-      const img = new Image();
-      const url = URL.createObjectURL(blobOrFile);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        let { width, height } = img;
-        if (!width || !height) return resolve(blobOrFile);
-        if (width <= maxDimension && height <= maxDimension) return resolve(blobOrFile);
-        if (width > height) {
-          height = Math.round((height * maxDimension) / width);
-          width = maxDimension;
-        } else {
-          width = Math.round((width * maxDimension) / height);
-          height = maxDimension;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob((resizedBlob) => {
-          resolve(resizedBlob || blobOrFile);
-        }, 'image/jpeg', 0.90);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(blobOrFile);
-      };
-      img.src = url;
-    } catch (e) {
-      resolve(blobOrFile);
-    }
-  });
-}
-
-async function loadFaceFile(file) {
-  if (!file) return;
-  if (!isImageFile(file)) {
-    alert("Please upload a valid image file (JPG, PNG, WEBP, or HEIC).");
+function loadFaceFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    alert("Please upload a valid image file (JPG, PNG, or WEBP).");
     return;
   }
-
-  const fileName = (file.name || '').toLowerCase();
-  const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
-
-  // Immediately show preview section with converting status if HEIC
-  const uploadZone = document.getElementById('face-upload-zone');
-  const previewSection = document.getElementById('face-preview-section');
-  const badge = document.getElementById('face-status-badge');
-  const placeholder = document.getElementById('face-result-placeholder');
-  const processView = document.getElementById('face-processing-view');
-  const restoredImg = document.getElementById('face-restored-img');
-  const downloadBtn = document.getElementById('face-download-btn');
-  const cleanBtn = document.getElementById('face-clean-btn');
-  const cleanBtnText = document.getElementById('face-clean-btn-text');
-
-  if (uploadZone) uploadZone.classList.add('hidden');
-  if (previewSection) previewSection.classList.remove('hidden');
-  if (placeholder) placeholder.classList.remove('hidden');
-  if (processView) processView.classList.add('hidden');
-  if (restoredImg) restoredImg.classList.add('hidden');
-  if (downloadBtn) downloadBtn.classList.add('hidden');
-
-  let targetBlob = file;
-
-  if (isHeic) {
-    if (badge) {
-      badge.textContent = 'Converting iPhone HEIC...';
-      badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 animate-pulse';
-    }
-    if (cleanBtn) cleanBtn.disabled = true;
-
-    try {
-      if (typeof heic2any !== 'undefined') {
-        const converted = await heic2any({
-          blob: file,
-          toType: "image/jpeg",
-          quality: 0.92
-        });
-        targetBlob = Array.isArray(converted) ? converted[0] : converted;
-      }
-    } catch (heicErr) {
-      console.warn("HEIC browser conversion notice:", heicErr);
-    }
-  }
-
-  // Optimize & resize blob to max 1024px for instant upload & fast GPU inference (3-4s)
-  try {
-    targetBlob = await resizeImageBlob(targetBlob, 1024);
-  } catch (resizeErr) {
-    console.warn("Resize notice:", resizeErr);
-  }
-
   const reader = new FileReader();
   reader.onload = function(e) {
-    let result = e.target.result;
-    if (result && !result.startsWith('data:image/')) {
-      const parts = result.split(',');
-      if (parts.length === 2) {
-        result = 'data:image/jpeg;base64,' + parts[1];
-      }
-    }
-    selectedFaceBase64 = result;
+    selectedFaceBase64 = e.target.result;
     const origImg = document.getElementById('face-original-img');
     if (origImg) origImg.src = selectedFaceBase64;
 
+    const uploadZone = document.getElementById('face-upload-zone');
+    const previewSection = document.getElementById('face-preview-section');
+    if (uploadZone) uploadZone.classList.add('hidden');
+    if (previewSection) previewSection.classList.remove('hidden');
+
+    const placeholder = document.getElementById('face-result-placeholder');
+    const processView = document.getElementById('face-processing-view');
+    const restoredImg = document.getElementById('face-restored-img');
+    const downloadBtn = document.getElementById('face-download-btn');
+    const cleanBtn = document.getElementById('face-clean-btn');
+    const cleanBtnText = document.getElementById('face-clean-btn-text');
+
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (processView) processView.classList.add('hidden');
+    if (restoredImg) restoredImg.classList.add('hidden');
+    if (downloadBtn) downloadBtn.classList.add('hidden');
     if (cleanBtn) {
       cleanBtn.classList.remove('hidden', 'opacity-75', 'cursor-not-allowed');
       cleanBtn.disabled = false;
     }
     if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
 
+    const badge = document.getElementById('face-status-badge');
     if (badge) {
-      badge.textContent = isHeic ? 'iPhone Photo Ready • Click Clean' : 'Ready to Clean';
+      badge.textContent = 'Ready to Clean';
       badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600';
     }
     safeLucide();
   };
-  reader.onerror = function() {
-    alert("Could not read file. Please try another image.");
-  };
-  reader.readAsDataURL(targetBlob);
+  reader.readAsDataURL(file);
 }
 
 function handleFacePhotoSelect(event) {
@@ -1440,53 +1350,19 @@ function handleFaceDrop(e) {
 }
 
 async function loadSampleFacePhoto(event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
+  if (event) event.stopPropagation();
   try {
-    const res = await fetch('/static/images/sample_face_demo.jpg?v=' + Date.now());
-    if (!res.ok) throw new Error("Could not fetch sample photo");
+    const res = await fetch('/static/images/sample_face_demo.jpg');
     const blob = await res.blob();
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      selectedFaceBase64 = e.target.result;
-      const origImg = document.getElementById('face-original-img');
-      if (origImg) origImg.src = selectedFaceBase64;
-
-      const uploadZone = document.getElementById('face-upload-zone');
-      const previewSection = document.getElementById('face-preview-section');
-      if (uploadZone) uploadZone.classList.add('hidden');
-      if (previewSection) previewSection.classList.remove('hidden');
-
-      const placeholder = document.getElementById('face-result-placeholder');
-      const processView = document.getElementById('face-processing-view');
-      const restoredImg = document.getElementById('face-restored-img');
-      const downloadBtn = document.getElementById('face-download-btn');
-      const cleanBtn = document.getElementById('face-clean-btn');
-      const cleanBtnText = document.getElementById('face-clean-btn-text');
-
-      if (placeholder) placeholder.classList.remove('hidden');
-      if (processView) processView.classList.add('hidden');
-      if (restoredImg) restoredImg.classList.add('hidden');
-      if (downloadBtn) downloadBtn.classList.add('hidden');
-      if (cleanBtn) {
-        cleanBtn.classList.remove('hidden', 'opacity-75', 'cursor-not-allowed');
-        cleanBtn.disabled = false;
-      }
-      if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
-
-      const badge = document.getElementById('face-status-badge');
-      if (badge) {
-        badge.textContent = 'Demo Sample Loaded • Ready to Clean';
-        badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700';
-      }
-      safeLucide();
-    };
-    reader.readAsDataURL(blob);
+    const file = new File([blob], "sample_face_demo.jpg", { type: "image/jpeg" });
+    loadFaceFile(file);
+    const badge = document.getElementById('face-status-badge');
+    if (badge) {
+      badge.textContent = 'Demo Sample Loaded • Ready to Clean';
+      badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700';
+    }
   } catch (err) {
     console.warn("Failed to load sample face photo:", err);
-    alert("Could not load sample. Please browse a photo from your device.");
   }
 }
 
@@ -1494,32 +1370,6 @@ async function executeFaceRestore() {
   if (!selectedFaceBase64) {
     alert("Please upload or drop a face photo first!");
     return;
-  }
-
-  // OPTION 2: Trial Check & Token Verification
-  const storedUser = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
-  let isUserLoggedIn = false;
-  let currentUserObj = null;
-  if (storedUser) {
-    try {
-      currentUserObj = JSON.parse(storedUser);
-      if (currentUserObj && (currentUserObj.email || currentUserObj.name)) {
-        isUserLoggedIn = true;
-      }
-    } catch (e) {}
-  }
-
-  if (!isUserLoggedIn) {
-    const trialUsed = localStorage.getItem('belzora_face_trial_used') === 'true';
-    if (trialUsed) {
-      openStudioAuthModal('trial_exhausted');
-      return;
-    }
-  } else {
-    if (tokenBalance < 2) {
-      alert(`⚠️ You need at least 2 tokens to clean a face. Your current balance is ${tokenBalance} TK. Tokens refill daily!`);
-      return;
-    }
   }
 
   const cleanBtn = document.getElementById('face-clean-btn');
@@ -1550,26 +1400,26 @@ async function executeFaceRestore() {
     statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 animate-pulse';
   }
 
-  // Animated status progress across neural pipeline stages
+  // Animated status progress
   let progress = 15;
   if (progressBar) progressBar.style.width = `${progress}%`;
   
   const progressInterval = setInterval(() => {
-    if (progress < 45) {
-      progress += 4;
+    if (progress < 40) {
+      progress += 8;
       if (processTitle) processTitle.textContent = "Detecting Facial Landmarks...";
-      if (processSub) processSub.textContent = "Aligning eyes, nose, lips and facial contours with RetinaFace...";
-    } else if (progress < 80) {
+      if (processSub) processSub.textContent = "Aligning eyes, nose, lips and facial contours...";
+    } else if (progress < 75) {
+      progress += 5;
+      if (processTitle) processTitle.textContent = "Neural Pixel Reconstruction...";
+      if (processSub) processSub.textContent = "Restoring blurry pupils, eyebrows, teeth & skin texture via CodeFormer...";
+    } else if (progress < 92) {
       progress += 2;
-      if (processTitle) processTitle.textContent = "Neural Face Reconstruction...";
-      if (processSub) processSub.textContent = "Restoring blurry pupils, natural skin texture & micro-details via CodeFormer...";
-    } else if (progress < 94) {
-      progress += 1;
-      if (processTitle) processTitle.textContent = "Ultra HD Super-Res...";
-      if (processSub) processSub.textContent = "Real-ESRGAN upsampling background and matching natural skin tones...";
+      if (processTitle) processTitle.textContent = "Auto-Luminance & 2048px Super-Res...";
+      if (processSub) processSub.textContent = "Clearing dark shadows and balancing skin tone vibrancy...";
     }
     if (progressBar) progressBar.style.width = `${progress}%`;
-  }, 1000);
+  }, 1100);
 
   try {
     const userStr = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
@@ -1578,17 +1428,14 @@ async function executeFaceRestore() {
       try { userId = JSON.parse(userStr).id || "usr_demo_01"; } catch(e){}
     }
 
-    const clarityMode = document.getElementById('face-clarity-mode') ? document.getElementById('face-clarity-mode').value : 'crystal';
-
     const response = await fetch('/api/restore-face', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         image_base64: selectedFaceBase64,
         brighten_face: autoBrighten,
-        fidelity: 0.7,
+        fidelity: 0.6,
         upscale: 2,
-        mode: clarityMode,
         user_id: userId
       })
     });
@@ -1612,18 +1459,6 @@ async function executeFaceRestore() {
         restoredImg.src = `${data.restored_url}?t=${Date.now()}`;
         restoredImg.classList.remove('hidden');
       }
-
-      // Populate interactive Before/After slider
-      const sliderBg = document.getElementById('face-slider-bg');
-      const sliderFg = document.getElementById('face-slider-fg');
-      const viewTabs = document.getElementById('face-view-tabs');
-      if (sliderBg) sliderBg.src = selectedFaceBase64;
-      if (sliderFg) sliderFg.src = `${data.restored_url}?t=${Date.now()}`;
-      if (viewTabs) viewTabs.classList.remove('hidden');
-
-      // Switch to interactive slider by default
-      switchFaceView('slider');
-
       if (downloadBtn) downloadBtn.classList.remove('hidden');
       if (cleanBtn) {
         cleanBtn.disabled = false;
@@ -1636,13 +1471,8 @@ async function executeFaceRestore() {
         statusBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
       }
 
-      // Option 2: Record trial or deduct user tokens
-      if (!isUserLoggedIn) {
-        localStorage.setItem('belzora_face_trial_used', 'true');
-        updateFaceTrialBadge();
-      } else {
-        deductUserTokens(2);
-      }
+      // Deduct small token cost for restoration
+      deductUserTokens(2);
       // Refresh creation feed so the restored item shows in gallery too
       fetchCreations();
       safeLucide();
@@ -1695,14 +1525,6 @@ function resetFaceRestore() {
   const cleanBtn = document.getElementById('face-clean-btn');
   const cleanBtnText = document.getElementById('face-clean-btn-text');
 
-  // Reset comparison slider and view tabs
-  const viewTabs = document.getElementById('face-view-tabs');
-  const sliderView = document.getElementById('face-slider-view');
-  const sideGrid = document.querySelector('#face-preview-section .grid');
-  if (viewTabs) viewTabs.classList.add('hidden');
-  if (sliderView) sliderView.classList.add('hidden');
-  if (sideGrid) sideGrid.classList.remove('hidden');
-
   if (placeholder) placeholder.classList.remove('hidden');
   if (processView) processView.classList.add('hidden');
   if (restoredImg) restoredImg.classList.add('hidden');
@@ -1713,62 +1535,5 @@ function resetFaceRestore() {
     cleanBtn.classList.remove('opacity-75', 'cursor-not-allowed');
   }
   if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
-  safeLucide();
-}
-
-function onFaceSliderInput(val) {
-  const clip = document.getElementById('face-slider-clip');
-  const handle = document.getElementById('face-slider-handle');
-  if (clip) clip.style.width = `${val}%`;
-  if (handle) handle.style.left = `${val}%`;
-}
-
-function switchFaceView(mode) {
-  const sliderView = document.getElementById('face-slider-view');
-  const sideGrid = document.querySelector('#face-preview-section .grid');
-  const sliderInner = document.getElementById('face-slider-inner');
-  const tabSlider = document.getElementById('face-tab-slider');
-  const tabSide = document.getElementById('face-tab-side');
-  const tabZoom = document.getElementById('face-tab-zoom');
-
-  // Reset tab active states
-  [tabSlider, tabSide, tabZoom].forEach(t => {
-    if (t) {
-      t.classList.remove('bg-white', 'shadow', 'text-pink-600');
-      t.classList.add('text-slate-600');
-    }
-  });
-
-  if (mode === 'slider') {
-    if (sliderView) sliderView.classList.remove('hidden');
-    if (sliderInner) sliderInner.style.transform = 'none';
-    if (sideGrid) sideGrid.classList.add('hidden');
-    if (tabSlider) {
-      tabSlider.classList.add('bg-white', 'shadow', 'text-pink-600');
-      tabSlider.classList.remove('text-slate-600');
-    }
-  } else if (mode === 'side') {
-    if (sliderView) sliderView.classList.add('hidden');
-    if (sideGrid) {
-      sideGrid.classList.remove('hidden');
-      sideGrid.style.transform = 'none';
-    }
-    if (tabSide) {
-      tabSide.classList.add('bg-white', 'shadow', 'text-pink-600');
-      tabSide.classList.remove('text-slate-600');
-    }
-  } else if (mode === 'zoom') {
-    if (sliderView) sliderView.classList.remove('hidden');
-    if (sliderInner) {
-      sliderInner.style.transform = 'scale(2.2)';
-      sliderInner.style.transformOrigin = 'center center';
-      sliderInner.style.transition = 'transform 0.3s ease';
-    }
-    if (sideGrid) sideGrid.classList.add('hidden');
-    if (tabZoom) {
-      tabZoom.classList.add('bg-white', 'shadow', 'text-pink-600');
-      tabZoom.classList.remove('text-slate-600');
-    }
-  }
   safeLucide();
 }
