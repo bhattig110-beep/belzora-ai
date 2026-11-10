@@ -54,20 +54,8 @@ function toggleMobileSettings() {
 document.addEventListener('DOMContentLoaded', () => {
   console.log("Belzora AI Studio Pro Suite Initialized!");
 
-  // Ensure user session exists (Default to Creator Awais if fresh session)
+  // User session initialization (Guest by default, unless logged in)
   let stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
-  if (!stored) {
-    const creatorUser = {
-      id: "usr_demo_01",
-      name: "Awais Ahmad Bhatti (Creator)",
-      email: "demo@belzora.ai",
-      avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Awais",
-      tokens: 150
-    };
-    localStorage.setItem('belzora_user', JSON.stringify(creatorUser));
-    localStorage.setItem('pixora_user', JSON.stringify(creatorUser));
-    stored = JSON.stringify(creatorUser);
-  }
 
   loadUserProfile();
   checkUrlParams();
@@ -85,25 +73,212 @@ function logoutFromStudio() {
 
 function loadUserProfile() {
   const stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+  const avatarImg = document.getElementById('sidebar-user-avatar-img');
+  const logoutBtn = document.getElementById('sidebar-logout-btn');
+  const loginBtn = document.getElementById('sidebar-login-btn');
+
   if (stored) {
     try {
       const user = JSON.parse(stored);
       tokenBalance = user.tokens ?? 150;
       updateTokenDisplay();
-      const avatarImg = document.getElementById('sidebar-user-avatar-img');
       if (avatarImg && user.avatar) avatarImg.src = user.avatar;
+      if (logoutBtn) logoutBtn.classList.remove('hidden');
+      if (loginBtn) loginBtn.classList.add('hidden');
     } catch (e) {
       console.warn("User load note:", e);
     }
   } else {
+    tokenBalance = 0;
     updateTokenDisplay();
+    if (avatarImg) avatarImg.src = "https://api.dicebear.com/7.x/bottts/svg?seed=Guest";
+    if (logoutBtn) logoutBtn.classList.add('hidden');
+    if (loginBtn) loginBtn.classList.remove('hidden');
   }
+  updateFaceTrialBadge();
 }
 
 function updateTokenDisplay() {
   const tokenEl = document.getElementById('token-count');
-  if (tokenEl) {
-    tokenEl.textContent = `${tokenBalance} TK`;
+  const mobTokenEl = document.getElementById('mobile-token-count');
+  const stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+  
+  if (stored) {
+    if (tokenEl) tokenEl.textContent = `${tokenBalance} TK`;
+    if (mobTokenEl) mobTokenEl.textContent = `${tokenBalance} TK`;
+  } else {
+    if (tokenEl) tokenEl.textContent = `Guest`;
+    if (mobTokenEl) mobTokenEl.textContent = `Guest`;
+  }
+}
+
+function updateFaceTrialBadge() {
+  const stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+  const badgeText = document.getElementById('face-token-badge-text');
+  const trialBannerAvail = document.getElementById('face-guest-trial-banner');
+  const trialBannerExhausted = document.getElementById('face-guest-exhausted-banner');
+  const trialUsed = localStorage.getItem('belzora_face_trial_used') === 'true';
+
+  if (stored) {
+    if (badgeText) badgeText.textContent = `2 Tokens / Clean (${tokenBalance} TK)`;
+    if (trialBannerAvail) trialBannerAvail.classList.add('hidden');
+    if (trialBannerExhausted) trialBannerExhausted.classList.add('hidden');
+  } else {
+    if (trialUsed) {
+      if (badgeText) badgeText.textContent = `Trial Used • Sign In (150 TK)`;
+      if (trialBannerAvail) trialBannerAvail.classList.add('hidden');
+      if (trialBannerExhausted) trialBannerExhausted.classList.remove('hidden');
+    } else {
+      if (badgeText) badgeText.textContent = `🎁 1 Free Trial (No Login)`;
+      if (trialBannerAvail) trialBannerAvail.classList.remove('hidden');
+      if (trialBannerExhausted) trialBannerExhausted.classList.add('hidden');
+    }
+  }
+  safeLucide();
+}
+
+function handleFaceBadgeClick() {
+  const stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+  if (!stored) {
+    openStudioAuthModal();
+  }
+}
+
+// STUDIO AUTH MODAL HANDLERS
+function openStudioAuthModal(reason = 'default') {
+  const modal = document.getElementById('studio-auth-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  const badge = document.getElementById('auth-modal-badge');
+  const title = document.getElementById('auth-modal-title');
+  const sub = document.getElementById('auth-modal-subtitle');
+
+  if (reason === 'trial_exhausted') {
+    if (badge) badge.textContent = "1 Free Trial Completed";
+    if (title) title.textContent = "Unlock Unlimited Face Cleaning";
+    if (sub) sub.innerHTML = 'Aapne 1 free photo trial use kar liya hai! Agli photos clean karne ke liye free account banayein aur <b class="text-purple-600">150 Free Starter Tokens</b> hasil karein.';
+  } else {
+    if (badge) badge.textContent = "Claim 150 Free Tokens";
+    if (title) title.textContent = "Join Belzora AI Studio";
+    if (sub) sub.innerHTML = 'Create your free account in 10 seconds to unlock <b class="text-purple-600">150 Free Daily Tokens</b> for 8K FLUX generation and face restoration.';
+  }
+
+  const signupErr = document.getElementById('studio-signup-error');
+  const loginErr = document.getElementById('studio-login-error');
+  if (signupErr) signupErr.classList.add('hidden');
+  if (loginErr) loginErr.classList.add('hidden');
+
+  switchStudioAuthTab('signup');
+  safeLucide();
+}
+
+function closeStudioAuthModal() {
+  const modal = document.getElementById('studio-auth-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function switchStudioAuthTab(tab) {
+  const signupForm = document.getElementById('studio-signup-form');
+  const loginForm = document.getElementById('studio-login-form');
+  const signupTab = document.getElementById('auth-tab-signup');
+  const loginTab = document.getElementById('auth-tab-login');
+
+  if (tab === 'signup') {
+    if (signupForm) signupForm.classList.remove('hidden');
+    if (loginForm) loginForm.classList.add('hidden');
+    if (signupTab) signupTab.className = "flex-1 py-2 rounded-xl text-xs font-black bg-white text-purple-700 shadow-sm transition";
+    if (loginTab) loginTab.className = "flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+  } else {
+    if (signupForm) signupForm.classList.add('hidden');
+    if (loginForm) loginForm.classList.remove('hidden');
+    if (signupTab) signupTab.className = "flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+    if (loginTab) loginTab.className = "flex-1 py-2 rounded-xl text-xs font-black bg-white text-purple-700 shadow-sm transition";
+  }
+}
+
+async function handleStudioSignup(e) {
+  e.preventDefault();
+  const name = document.getElementById('studio-signup-name').value.trim();
+  const email = document.getElementById('studio-signup-email').value.trim();
+  const password = document.getElementById('studio-signup-password').value;
+  const errorBox = document.getElementById('studio-signup-error');
+  const btn = document.getElementById('studio-signup-btn');
+
+  if (!name || !email || !password) return;
+  if (btn) { btn.disabled = true; btn.classList.add('opacity-75'); }
+  if (errorBox) errorBox.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}` })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.detail || "Signup failed. Please try a different email.");
+    }
+
+    localStorage.setItem('belzora_user', JSON.stringify(data.user));
+    localStorage.setItem('pixora_user', JSON.stringify(data.user));
+    closeStudioAuthModal();
+    loadUserProfile();
+
+    if (selectedFaceBase64) {
+      setTimeout(() => {
+        executeFaceRestore();
+      }, 500);
+    }
+  } catch (err) {
+    if (errorBox) {
+      errorBox.textContent = err.message || "Failed to create account.";
+      errorBox.classList.remove('hidden');
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('opacity-75'); }
+  }
+}
+
+async function handleStudioLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('studio-login-email').value.trim();
+  const password = document.getElementById('studio-login-password').value;
+  const errorBox = document.getElementById('studio-login-error');
+  const btn = document.getElementById('studio-login-btn');
+
+  if (!email || !password) return;
+  if (btn) { btn.disabled = true; btn.classList.add('opacity-75'); }
+  if (errorBox) errorBox.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.detail || "Invalid email or password.");
+    }
+
+    localStorage.setItem('belzora_user', JSON.stringify(data.user));
+    localStorage.setItem('pixora_user', JSON.stringify(data.user));
+    closeStudioAuthModal();
+    loadUserProfile();
+
+    if (selectedFaceBase64) {
+      setTimeout(() => {
+        executeFaceRestore();
+      }, 500);
+    }
+  } catch (err) {
+    if (errorBox) {
+      errorBox.textContent = err.message || "Login failed.";
+      errorBox.classList.remove('hidden');
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('opacity-75'); }
   }
 }
 
@@ -1321,6 +1496,32 @@ async function executeFaceRestore() {
     return;
   }
 
+  // OPTION 2: Trial Check & Token Verification
+  const storedUser = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+  let isUserLoggedIn = false;
+  let currentUserObj = null;
+  if (storedUser) {
+    try {
+      currentUserObj = JSON.parse(storedUser);
+      if (currentUserObj && (currentUserObj.email || currentUserObj.name)) {
+        isUserLoggedIn = true;
+      }
+    } catch (e) {}
+  }
+
+  if (!isUserLoggedIn) {
+    const trialUsed = localStorage.getItem('belzora_face_trial_used') === 'true';
+    if (trialUsed) {
+      openStudioAuthModal('trial_exhausted');
+      return;
+    }
+  } else {
+    if (tokenBalance < 2) {
+      alert(`⚠️ You need at least 2 tokens to clean a face. Your current balance is ${tokenBalance} TK. Tokens refill daily!`);
+      return;
+    }
+  }
+
   const cleanBtn = document.getElementById('face-clean-btn');
   const cleanBtnText = document.getElementById('face-clean-btn-text');
   const placeholder = document.getElementById('face-result-placeholder');
@@ -1420,8 +1621,13 @@ async function executeFaceRestore() {
         statusBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
       }
 
-      // Deduct small token cost for restoration
-      deductUserTokens(2);
+      // Option 2: Record trial or deduct user tokens
+      if (!isUserLoggedIn) {
+        localStorage.setItem('belzora_face_trial_used', 'true');
+        updateFaceTrialBadge();
+      } else {
+        deductUserTokens(2);
+      }
       // Refresh creation feed so the restored item shows in gallery too
       fetchCreations();
       safeLucide();
