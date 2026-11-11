@@ -1276,14 +1276,14 @@ window.addEventListener('scroll', () => {
 // 1-CLICK AI FACE CLEANER, BRIGHTENER & NEURAL RESTORER ENGINE
 // =========================================================================
 
-function loadFaceFile(file) {
+function loadFaceFile(file, badgeOptions) {
   if (!file || !file.type.startsWith('image/')) {
     alert("Please upload a valid image file (JPG, PNG, or WEBP).");
     return;
   }
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    selectedFaceBase64 = e.target.result;
+
+  const applyFaceDataUrl = (dataUrl) => {
+    selectedFaceBase64 = dataUrl;
     const origImg = document.getElementById('face-original-img');
     if (origImg) origImg.src = selectedFaceBase64;
 
@@ -1311,10 +1311,37 @@ function loadFaceFile(file) {
 
     const badge = document.getElementById('face-status-badge');
     if (badge) {
-      badge.textContent = 'Ready to Clean';
-      badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600';
+      badge.textContent = (badgeOptions && badgeOptions.text) || 'Ready to Clean';
+      badge.className = (badgeOptions && badgeOptions.className) || 'text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600';
     }
     safeLucide();
+  };
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const rawDataUrl = e.target.result;
+    const maxEdge = 1600;
+    const img = new Image();
+    img.onload = function() {
+      const longest = Math.max(img.width, img.height);
+      if (longest > maxEdge || file.size > 1500000) {
+        const scale = Math.min(1, maxEdge / (longest || 1));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          applyFaceDataUrl(canvas.toDataURL('image/jpeg', 0.92));
+          return;
+        }
+      }
+      applyFaceDataUrl(rawDataUrl);
+    };
+    img.onerror = function() {
+      applyFaceDataUrl(rawDataUrl);
+    };
+    img.src = rawDataUrl;
   };
   reader.readAsDataURL(file);
 }
@@ -1355,12 +1382,10 @@ async function loadSampleFacePhoto(event) {
     const res = await fetch('/static/images/sample_face_demo.jpg');
     const blob = await res.blob();
     const file = new File([blob], "sample_face_demo.jpg", { type: "image/jpeg" });
-    loadFaceFile(file);
-    const badge = document.getElementById('face-status-badge');
-    if (badge) {
-      badge.textContent = 'Demo Sample Loaded • Ready to Clean';
-      badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700';
-    }
+    loadFaceFile(file, {
+      text: 'Demo Sample Loaded • Ready to Clean',
+      className: 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700'
+    });
   } catch (err) {
     console.warn("Failed to load sample face photo:", err);
   }
@@ -1428,17 +1453,36 @@ async function executeFaceRestore() {
       try { userId = JSON.parse(userStr).id || "usr_demo_01"; } catch(e){}
     }
 
-    const response = await fetch('/api/restore-face', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image_base64: selectedFaceBase64,
-        brighten_face: autoBrighten,
-        fidelity: 0.6,
-        upscale: 2,
-        user_id: userId
-      })
+    const payloadStr = JSON.stringify({
+      image_base64: selectedFaceBase64,
+      brighten_face: autoBrighten,
+      fidelity: 0.6,
+      upscale: 2,
+      user_id: userId
     });
+
+    let response;
+    let lastNetworkErr = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        response = await fetch('/api/restore-face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payloadStr
+        });
+        lastNetworkErr = null;
+        break;
+      } catch (netErr) {
+        lastNetworkErr = netErr;
+        if (attempt === 0) {
+          if (processTitle) processTitle.textContent = "Reconnecting to Belzora AI Server...";
+          await new Promise(r => setTimeout(r, 1500));
+        }
+      }
+    }
+    if (lastNetworkErr || !response) {
+      throw new Error("Connection interrupted while enhancing. Please try again.");
+    }
 
     clearInterval(progressInterval);
 
