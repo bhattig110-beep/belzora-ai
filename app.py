@@ -18,10 +18,14 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from gradio_client import Client, handle_file
 from dotenv import load_dotenv
-from PIL import Image, ImageEnhance, ImageFilter, ImageStat
-import numpy as np
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageStat
+
+
+def _load_gradio():
+    """Lazy-load gradio_client only when a Gradio-backed endpoint runs."""
+    from gradio_client import Client, handle_file
+    return Client, handle_file
 
 try:
     from pillow_heif import register_heif_opener
@@ -201,6 +205,7 @@ def get_flux_client(token_str: Optional[str] = None):
     key = active_token or "anonymous"
     if key not in flux_clients:
         try:
+            Client, _ = _load_gradio()
             flux_clients[key] = Client(
                 "black-forest-labs/FLUX.1-schnell",
                 token=active_token,
@@ -216,6 +221,7 @@ def get_flux_dev_client(token_str: Optional[str] = None):
     key = active_token or "anonymous"
     if key not in flux_dev_clients:
         try:
+            Client, _ = _load_gradio()
             flux_dev_clients[key] = Client(
                 "black-forest-labs/FLUX.1-dev",
                 token=active_token,
@@ -232,6 +238,7 @@ def get_lightning_client():
     global lightning_client
     if lightning_client is None:
         try:
+            Client, _ = _load_gradio()
             lightning_client = Client("AP123/SDXL-Lightning", httpx_kwargs={"timeout": 120.0})
         except Exception as e:
             print(f"SDXL Lightning client init error: {e}")
@@ -269,6 +276,7 @@ def get_vision_client():
     global vision_client
     if vision_client is None:
         try:
+            Client, _ = _load_gradio()
             vision_client = Client("aifeifei798/Image-To-Flux-Prompt", httpx_kwargs={"timeout": 60.0})
         except Exception as e:
             print(f"Vision client init error: {e}")
@@ -280,6 +288,7 @@ def extract_image_features(file_path: Path) -> str:
         vc = get_vision_client()
         if not vc:
             return "a detailed photographic subject, composition and lighting"
+        _, handle_file = _load_gradio()
         raw = vc.predict(
             image=handle_file(str(file_path)),
             api_name="/feifeichat"
@@ -444,6 +453,7 @@ codeformer_client = None
 def get_codeformer_client():
     global codeformer_client
     if codeformer_client is None:
+        Client, _ = _load_gradio()
         try:
             hf_tok = os.getenv("HF_TOKEN")
             if not hf_tok:
@@ -464,6 +474,45 @@ def get_codeformer_client():
                 print(f"CodeFormer fallback init error: {e2}")
                 return None
     return codeformer_client
+
+def _load_bounded_rgb(src_path: Path, max_input_dim: int = 2048) -> Image.Image:
+    """Load an image as EXIF-oriented RGB while capping extreme inputs to prevent OOM."""
+    with Image.open(src_path) as raw:
+        if raw.format == "JPEG" and max(raw.size) > max_input_dim:
+            raw.draft("RGB", (max_input_dim, max_input_dim))
+        if raw.getexif().get(274, 1) != 1:
+            transposed = ImageOps.exif_transpose(raw)
+            im = transposed.convert("RGB") if transposed.mode != "RGB" else transposed
+            if im is not transposed:
+                transposed.close()
+        else:
+            im = raw.convert("RGB")
+    if max(im.size) > max_input_dim:
+        ratio = max_input_dim / max(im.size)
+        capped = (max(1, round(im.width * ratio)), max(1, round(im.height * ratio)))
+        prev = im
+        im = prev.resize(capped, Image.Resampling.LANCZOS)
+        prev.close()
+    return im
+
+
+def _upscale_and_sharpen(src_path: Path, scale: int = 2, max_dim: int = 2048) -> Image.Image:
+    """Apply 2x Lanczos upscaling + UnsharpMask while bounding longest side to max_dim."""
+    im = _load_bounded_rgb(src_path, max_input_dim=max_dim)
+    w, h = im.size
+    tw, th = w * scale, h * scale
+    if max(tw, th) > max_dim:
+        ratio = max_dim / max(w, h)
+        tw, th = max(1, round(w * ratio)), max(1, round(h * ratio))
+    if (tw, th) != (w, h):
+        prev = im
+        im = prev.resize((tw, th), Image.Resampling.LANCZOS)
+        prev.close()
+    prev = im
+    im = prev.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=2))
+    prev.close()
+    return im
+
 
 # 1. AI 4K UPSCALER & NEURAL FACE RESTORER
 @app.post("/api/upscale")
@@ -490,6 +539,7 @@ async def upscale_image(req: UpscaleRequest):
             cf = get_codeformer_client()
             if not cf:
                 raise Exception("CodeFormer client unavailable")
+            _, handle_file = _load_gradio()
             res = cf.predict(
                 gallery=[{"image": handle_file(str(file_path))}],
                 face_restoration="CodeFormer.pth",
@@ -515,13 +565,12 @@ async def upscale_image(req: UpscaleRequest):
 
     try:
         if not success_cf or not upscaled_path.exists():
-            img = Image.open(file_path).convert("RGB")
-            w, h = img.size
-            new_w, new_h = w * 2, h * 2
-            upscaled = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-            upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=2))
-            upscaled = ImageEnhance.Contrast(upscaled).enhance(1.05)
+            upscaled = _upscale_and_sharpen(file_path, scale=2, max_dim=2048)
+            prev = upscaled
+            upscaled = ImageEnhance.Contrast(prev).enhance(1.05)
+            prev.close()
             upscaled.save(upscaled_path, format="PNG")
+            upscaled.close()
         
         with Image.open(upscaled_path) as im_done:
             fin_w, fin_h = im_done.size
@@ -557,13 +606,16 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     restored_filename = f"clean_{rec_id}.png"
     restored_path = OUTPUTS_DIR / restored_filename
 
-    # 1. Decode & Save Original
+    # 1. Decode & Save Original (free base64 buffers immediately)
     try:
         if req.image_base64:
             header, encoded = req.image_base64.split(",", 1) if "," in req.image_base64 else ("", req.image_base64)
+            req.image_base64 = None
             img_bytes = base64.b64decode(encoded)
+            del encoded, header
             with open(orig_path, "wb") as f:
                 f.write(img_bytes)
+            del img_bytes
         elif req.image_url:
             if req.image_url.startswith("/outputs/"):
                 src = OUTPUTS_DIR / req.image_url.replace("/outputs/", "")
@@ -575,30 +627,34 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process input image: {e}")
 
-    # 2. Yesterday's Exact 1-Click Neural Upscale & Face Restoration Formula
+    # 2. Yesterday's Exact 1-Click Neural Upscale & Face Restoration Formula (Memory-Bounded)
+    im = None
     try:
-        src_im = Image.open(orig_path).convert("RGB")
-        w, h = src_im.size
         scale = req.upscale or 2
-        upscaled = src_im.resize((w * scale, h * scale), Image.Resampling.LANCZOS)
-        upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=2))
-        upscaled.save(restored_path, format="PNG")
+        im = _upscale_and_sharpen(orig_path, scale=scale, max_dim=2048)
 
         # Smart Brightening & Skin Tone Beautification (Yesterday's exact formula)
-        im = Image.open(restored_path).convert("RGB")
         stat = ImageStat.Stat(im)
         luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
 
         if req.brighten_face or luma < 125:
             bright_factor = 1.18 if luma >= 100 else 1.28
-            im = ImageEnhance.Brightness(im).enhance(bright_factor)
-            im = ImageEnhance.Contrast(im).enhance(1.06)
-            im = ImageEnhance.Color(im).enhance(1.08)  # Natural warm skin glow
-            im = im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=125, threshold=2))
-            im.save(restored_path, format="PNG")
+            for enhancer_cls, factor in (
+                (ImageEnhance.Brightness, bright_factor),
+                (ImageEnhance.Contrast, 1.06),
+                (ImageEnhance.Color, 1.08),  # Natural warm skin glow
+            ):
+                prev = im
+                im = enhancer_cls(prev).enhance(factor)
+                prev.close()
+            prev = im
+            im = prev.filter(ImageFilter.UnsharpMask(radius=1.2, percent=125, threshold=2))
+            prev.close()
 
-        im_fin = Image.open(restored_path)
-        fin_w, fin_h = im_fin.size
+        fin_w, fin_h = im.size
+        im.save(restored_path, format="PNG")
+        im.close()
+        im = None
 
         # Save to database
         creation_data = {
@@ -630,6 +686,8 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
         print(f"Restore error: {e}")
         raise HTTPException(status_code=500, detail=f"Enhancement error: {e}")
     finally:
+        if im is not None:
+            im.close()
         gc.collect()
 
 @app.post("/api/history/favorite")
