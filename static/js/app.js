@@ -360,8 +360,10 @@ function switchLeonardoTab(tab) {
   const imgBtn = document.getElementById('nav-image-btn');
   const vidBtn = document.getElementById('nav-video-btn');
   const faceBtn = document.getElementById('nav-face-btn');
+  const histBtn = document.getElementById('nav-history-btn');
   const mobileImgBtn = document.getElementById('mobile-nav-image-btn');
   const mobileFaceBtn = document.getElementById('mobile-nav-face-btn');
+  const mobileHistBtn = document.getElementById('mobile-nav-history-btn');
   const promptTopBar = document.getElementById('prompt-top-bar');
   const galleryFeed = document.getElementById('leo-gallery-feed');
   const facePanel = document.getElementById('face-restore-panel');
@@ -377,9 +379,28 @@ function switchLeonardoTab(tab) {
   if (imgBtn) imgBtn.className = defaultBtnClass;
   if (vidBtn) vidBtn.className = defaultBtnClass;
   if (faceBtn) faceBtn.className = defaultBtnClass;
+  if (histBtn) histBtn.className = defaultBtnClass;
 
   if (mobileImgBtn) mobileImgBtn.className = "flex flex-col items-center text-slate-500 hover:text-purple-600 transition";
   if (mobileFaceBtn) mobileFaceBtn.className = "flex flex-col items-center text-slate-500 hover:text-pink-600 transition";
+  if (mobileHistBtn) mobileHistBtn.className = "flex flex-col items-center text-slate-500 hover:text-purple-600 transition";
+
+  if (tab === 'history') {
+    if (histBtn) histBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/30";
+    if (mobileHistBtn) mobileHistBtn.className = "flex flex-col items-center text-purple-600 transition";
+
+    if (settingsRail) settingsRail.style.display = '';
+    if (facePanel) facePanel.classList.add('hidden');
+    if (galleryFeed) galleryFeed.classList.remove('hidden');
+    if (promptTopBar) promptTopBar.classList.remove('hidden');
+
+    filterGallery('face_restore');
+    setTimeout(() => {
+      if (galleryFeed) galleryFeed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    safeLucide();
+    return;
+  }
 
   if (tab === 'face') {
     if (faceBtn) faceBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-pink-500 via-rose-500 to-purple-600 text-white shadow-md shadow-pink-500/30";
@@ -396,6 +417,7 @@ function switchLeonardoTab(tab) {
     if (galleryFeed) galleryFeed.classList.add('hidden');
     if (promptTopBar) promptTopBar.classList.add('hidden');
 
+    renderFaceCleanHistory();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (tab === 'image') {
     if (imgBtn) imgBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-purple-600 via-pink-500 to-purple-500 text-white shadow-md shadow-pink-500/30";
@@ -931,19 +953,20 @@ async function fetchCreations() {
     });
 
     renderGallery();
+    renderFaceCleanHistory();
   } catch (err) {
     console.error("Fetch creations error:", err);
   }
 }
 
-// Filter feed gallery (All | Starred | Images | Videos)
+// Filter feed gallery (All | Clean Faces | Starred | Images | Videos)
 function filterGallery(type) {
   currentFilter = type;
   document.querySelectorAll('.feed-filter-btn').forEach(btn => {
     if (btn.getAttribute('data-filter') === type) {
-      btn.className = "feed-filter-btn px-3 py-1 rounded-xl bg-purple-100 text-purple-800 border border-purple-300 font-black text-xs shadow-sm";
+      btn.className = "feed-filter-btn px-2.5 py-1 rounded-xl bg-purple-100 text-purple-800 border border-purple-300 font-black text-xs shadow-sm";
     } else {
-      btn.className = "feed-filter-btn px-3 py-1 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold shadow-sm";
+      btn.className = "feed-filter-btn px-2.5 py-1 rounded-xl bg-white text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-bold shadow-sm";
     }
   });
   renderGallery();
@@ -958,6 +981,9 @@ function renderGallery() {
   const filtered = allCreations.filter(item => {
     if (currentFilter === 'all') return true;
     if (currentFilter === 'favorite') return Boolean(item.favorite);
+    if (currentFilter === 'face_restore') {
+      return item.type === 'face_restore' || (item.model && item.model.includes('Face Cleaner')) || (item.id && item.id.startsWith('face_clean_'));
+    }
     return item.type === currentFilter;
   });
 
@@ -971,9 +997,20 @@ function renderGallery() {
 
   grid.innerHTML = filtered.map(item => {
     const isVid = item.type === 'video';
+    const isFace = item.type === 'face_restore' || (item.model && item.model.includes('Face Cleaner')) || (item.id && item.id.startsWith('face_clean_'));
     const isFav = Boolean(item.favorite);
     const thumb = isVid ? (item.thumbnail || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80') : item.url;
     
+    let badgeText = '🖼️ FLUX.1';
+    let badgeBg = 'bg-pink-600 text-white';
+    if (isVid) {
+      badgeText = '🎬 Motion';
+      badgeBg = 'bg-cyan-600 text-white';
+    } else if (isFace) {
+      badgeText = '✨ Clean HD';
+      badgeBg = 'bg-gradient-to-r from-pink-600 to-purple-600 text-white';
+    }
+
     const safePrompt = (item.prompt || '').replace(/"/g, '&quot;');
     const safeId = item.id || `item_${Math.random()}`;
 
@@ -985,8 +1022,8 @@ function renderGallery() {
           
           <!-- Top Left Badge -->
           <div class="absolute top-3 left-3 flex items-center space-x-1.5">
-            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider backdrop-blur-md ${isVid ? 'bg-cyan-600 text-white' : 'bg-pink-600 text-white'} shadow-md">
-              ${isVid ? '🎬 Motion' : '🖼️ FLUX.1'}
+            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider backdrop-blur-md ${badgeBg} shadow-md">
+              ${badgeText}
             </span>
             ${item.is_upscaled ? `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black bg-purple-600 text-white shadow-md">4K</span>` : ''}
             ${item.is_remix ? `<span class="px-2 py-0.5 rounded-lg text-[9px] font-black bg-cyan-500 text-white shadow-md">REMIX</span>` : ''}
@@ -1020,12 +1057,17 @@ function renderGallery() {
               <p class="text-xs font-bold text-white line-clamp-2 mb-2 leading-relaxed">${safePrompt}</p>
               <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-pink-300">${item.style || 'Photoreal'}</span>
-                ${!isVid ? `
+                ${isFace ? `
+                  <button onclick="event.stopPropagation(); loadHistoryItemIntoViewer('${safeId}')" class="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-[10px] font-black shadow-lg transition cursor-pointer">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                    <span>View Clean</span>
+                  </button>
+                ` : (!isVid ? `
                   <button onclick="event.stopPropagation(); triggerMotionById('${safeId}')" class="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white text-[10px] font-black shadow-lg transition">
                     <i data-lucide="film" class="w-3.5 h-3.5"></i>
                     <span>Motion</span>
                   </button>
-                ` : ''}
+                ` : '')}
               </div>
             </div>
           </div>
@@ -1517,8 +1559,27 @@ async function executeFaceRestore() {
 
       // Deduct small token cost for restoration
       deductUserTokens(2);
+
+      // Save to local face clean history cache so user never loses it
+      try {
+        let faceHistory = JSON.parse(localStorage.getItem('belzora_face_clean_history') || '[]');
+        const newEntry = {
+          id: data.id,
+          url: data.restored_url,
+          reference_url: data.original_url || selectedFaceBase64,
+          dimensions: `${data.width} × ${data.height} HD`,
+          created_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
+          model: "Belzora Neural Face Cleaner HD (CodeFormer)",
+          type: "face_restore"
+        };
+        faceHistory = faceHistory.filter(h => h.id !== data.id);
+        faceHistory.unshift(newEntry);
+        localStorage.setItem('belzora_face_clean_history', JSON.stringify(faceHistory.slice(0, 50)));
+      } catch (e) {}
+
       // Refresh creation feed so the restored item shows in gallery too
       fetchCreations();
+      renderFaceCleanHistory();
       safeLucide();
     }, 400);
 
@@ -1580,4 +1641,176 @@ function resetFaceRestore() {
   }
   if (cleanBtnText) cleanBtnText.textContent = "✨ Clean & Restore Face Now (1-Click)";
   safeLucide();
+}
+
+// =========================================================================
+// CLEANED FACES HISTORY MANAGEMENT (Database + Persistent Local Cache)
+// =========================================================================
+
+function renderFaceCleanHistory() {
+  const grid = document.getElementById('face-clean-history-grid');
+  const emptyState = document.getElementById('face-clean-history-empty');
+  const countBadge = document.getElementById('face-history-count');
+  if (!grid) return;
+
+  let localCache = [];
+  try {
+    localCache = JSON.parse(localStorage.getItem('belzora_face_clean_history') || '[]');
+  } catch (e) {}
+
+  const backendFaceItems = (allCreations || []).filter(item => {
+    return item && (item.type === 'face_restore' || (item.model && item.model.includes('Face Cleaner')) || (item.id && String(item.id).startsWith('face_clean_')));
+  });
+
+  const map = new Map();
+  localCache.forEach(item => { if (item && item.id) map.set(item.id, item); });
+  backendFaceItems.forEach(item => { if (item && item.id) map.set(item.id, item); });
+
+  const faceItems = Array.from(map.values()).sort((a, b) => {
+    const tA = new Date(a.created_at || a.timestamp || 0).getTime();
+    const tB = new Date(b.created_at || b.timestamp || 0).getTime();
+    return tB - tA;
+  });
+
+  if (countBadge) {
+    countBadge.textContent = `${faceItems.length} Photo${faceItems.length === 1 ? '' : 's'}`;
+  }
+
+  if (faceItems.length === 0) {
+    grid.innerHTML = '';
+    if (emptyState) emptyState.classList.remove('hidden');
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+
+  grid.innerHTML = faceItems.map(item => {
+    const cleanUrl = item.url;
+    const dateStr = item.created_at ? item.created_at.split(' ')[0] : 'Recent';
+    const dims = item.dimensions || '2048px HD';
+    const safeId = item.id;
+
+    return `
+      <div class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
+        <!-- Thumbnail -->
+        <div class="relative aspect-square w-full bg-slate-100 overflow-hidden cursor-pointer" onclick="loadHistoryItemIntoViewer('${safeId}')">
+          <img src="${cleanUrl}" alt="Restored Face" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+          
+          <!-- Top Badge -->
+          <div class="absolute top-2 left-2 flex items-center space-x-1">
+            <span class="px-2 py-0.5 rounded-md text-[9px] font-black bg-emerald-600/90 text-white backdrop-blur-md shadow-sm">
+              ✨ ${dims}
+            </span>
+          </div>
+
+          <!-- Quick Action Hover -->
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2.5">
+            <div class="flex items-center justify-between text-white text-[10px] font-bold">
+              <span>${dateStr}</span>
+              <span class="bg-white/20 px-2 py-0.5 rounded backdrop-blur-md">Click to View</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Footer -->
+        <div class="p-2.5 flex items-center justify-between bg-slate-50 border-t border-slate-100">
+          <button onclick="loadHistoryItemIntoViewer('${safeId}')" class="text-[11px] font-black text-pink-600 hover:text-pink-700 flex items-center space-x-1 cursor-pointer">
+            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            <span>Compare</span>
+          </button>
+          
+          <div class="flex items-center space-x-1">
+            <a href="${cleanUrl}" download="belzora_clean_${safeId}.png" onclick="event.stopPropagation()" title="Download HD" class="p-1 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition cursor-pointer">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            </a>
+            <button onclick="deleteFaceCleanHistoryItem('${safeId}', event)" title="Delete" class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  safeLucide();
+}
+
+function loadHistoryItemIntoViewer(itemId) {
+  let item = (creationsMap || {})[itemId];
+  if (!item) {
+    try {
+      const localCache = JSON.parse(localStorage.getItem('belzora_face_clean_history') || '[]');
+      item = localCache.find(x => x.id === itemId);
+    } catch(e) {}
+  }
+  if (!item) return;
+
+  if (currentMode !== 'face') {
+    switchLeonardoTab('face');
+  }
+
+  restoredFaceUrl = item.url;
+  selectedFaceBase64 = item.reference_url || item.url;
+
+  const origImg = document.getElementById('face-original-img');
+  const restoredImg = document.getElementById('face-restored-img');
+  const uploadZone = document.getElementById('face-upload-zone');
+  const previewSection = document.getElementById('face-preview-section');
+  const placeholder = document.getElementById('face-result-placeholder');
+  const processView = document.getElementById('face-processing-view');
+  const downloadBtn = document.getElementById('face-download-btn');
+  const cleanBtn = document.getElementById('face-clean-btn');
+  const cleanBtnText = document.getElementById('face-clean-btn-text');
+  const statusBadge = document.getElementById('face-status-badge');
+
+  if (origImg) origImg.src = item.reference_url || item.url;
+  if (restoredImg) {
+    restoredImg.src = item.url;
+    restoredImg.classList.remove('hidden');
+  }
+  if (uploadZone) uploadZone.classList.add('hidden');
+  if (previewSection) previewSection.classList.remove('hidden');
+  if (placeholder) placeholder.classList.add('hidden');
+  if (processView) processView.classList.add('hidden');
+  if (downloadBtn) downloadBtn.classList.remove('hidden');
+  if (cleanBtn) {
+    cleanBtn.classList.remove('hidden', 'opacity-75', 'cursor-not-allowed');
+    cleanBtn.disabled = false;
+  }
+  if (cleanBtnText) cleanBtnText.textContent = "✨ Clean Again (1-Click)";
+  if (statusBadge) {
+    statusBadge.textContent = '2048px Crystal Clean HD ✨';
+    statusBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
+  }
+
+  const topPanel = document.getElementById('face-restore-panel');
+  if (topPanel) {
+    topPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  safeLucide();
+}
+
+async function deleteFaceCleanHistoryItem(id, event) {
+  if (event) event.stopPropagation();
+  if (!confirm("Are you sure you want to remove this cleaned photo from history?")) return;
+
+  try {
+    let localCache = JSON.parse(localStorage.getItem('belzora_face_clean_history') || '[]');
+    localCache = localCache.filter(item => item.id !== id);
+    localStorage.setItem('belzora_face_clean_history', JSON.stringify(localCache));
+  } catch(e) {}
+
+  try {
+    await fetch('/api/history/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+  } catch(e) {}
+
+  allCreations = (allCreations || []).filter(item => item.id !== id);
+  if (creationsMap) delete creationsMap[id];
+
+  renderFaceCleanHistory();
+  renderGallery();
 }
