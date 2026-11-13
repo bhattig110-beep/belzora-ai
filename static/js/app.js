@@ -1514,25 +1514,37 @@ async function executeFaceRestore() {
 
     let response;
     let lastNetworkErr = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
         response = await fetch('/api/restore-face', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: payloadStr
         });
+        if (response && response.ok) {
+          lastNetworkErr = null;
+          break;
+        } else if (response && response.status >= 500) {
+          // Server warm-up/busy retry
+          lastNetworkErr = new Error("Server warming up");
+          if (attempt < 2) {
+            if (processTitle) processTitle.textContent = `Neural engine warming up... Retrying (${attempt + 2}/3)...`;
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
+        }
         lastNetworkErr = null;
         break;
       } catch (netErr) {
         lastNetworkErr = netErr;
-        if (attempt === 0) {
-          if (processTitle) processTitle.textContent = "Reconnecting to Belzora AI Server...";
-          await new Promise(r => setTimeout(r, 1500));
+        if (attempt < 2) {
+          if (processTitle) processTitle.textContent = `Reconnecting to Belzora AI Neural Server (${attempt + 2}/3)...`;
+          await new Promise(r => setTimeout(r, 2000));
         }
       }
     }
     if (lastNetworkErr || !response) {
-      throw new Error("Connection interrupted while enhancing. Please try again.");
+      throw new Error("Connection interrupted while enhancing. Please click Clean Face again in a moment.");
     }
 
     clearInterval(progressInterval);
@@ -1595,7 +1607,10 @@ async function executeFaceRestore() {
   } catch (err) {
     clearInterval(progressInterval);
     console.error("Face restore error:", err);
-    alert("Error restoring face: " + (err.message || "Please try again!"));
+    const friendlyMsg = (err.message && !err.message.includes("Failed to fetch"))
+      ? err.message
+      : "Server was reconnecting. Please click Clean Face again!";
+    alert("Notice: " + friendlyMsg);
     if (processView) processView.classList.add('hidden');
     if (placeholder) placeholder.classList.remove('hidden');
     if (cleanBtn) {
@@ -1907,6 +1922,20 @@ const INITIAL_FACE_CLEAN_HISTORY = [
     "url": "/static/history_faces/clean_18_studio_comparison.jpg",
     "reference_url": "/static/history_faces/orig_18_studio_comparison.jpg",
     "created_at": "2026-11-10 15:10:00",
+    "is_upscaled": true
+  },
+  {
+    "id": "face_clean_cyberpunk_19",
+    "title": "✨ Cyberpunk Warrior Neural Restoration",
+    "prompt": "✨ Cyberpunk Warrior • 2048px CodeFormer Neural Face Restore",
+    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
+    "style": "PhotoReal Clear & Bright",
+    "type": "face_restore",
+    "aspect_ratio": "1:1",
+    "dimensions": "2048 × 2048 Ultra HD",
+    "url": "/static/history_faces/clean_19_cyberpunk_face.jpg",
+    "reference_url": "/static/history_faces/orig_19_cyberpunk_face.jpg",
+    "created_at": "2026-11-09 22:15:00",
     "is_upscaled": true
   }
 ];
