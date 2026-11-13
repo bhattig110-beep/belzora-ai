@@ -945,6 +945,15 @@ async function fetchCreations() {
     const data = await res.json();
     allCreations = data.history || [];
     
+    // Merge all seeded historical clean face photos if not already present
+    if (typeof INITIAL_FACE_CLEAN_HISTORY !== 'undefined' && Array.isArray(INITIAL_FACE_CLEAN_HISTORY)) {
+      INITIAL_FACE_CLEAN_HISTORY.forEach(initItem => {
+        if (!allCreations.some(c => c && c.id === initItem.id)) {
+          allCreations.push(initItem);
+        }
+      });
+    }
+
     creationsMap = {};
     allCreations.forEach(item => {
       if (item && item.id) {
@@ -1647,6 +1656,107 @@ function resetFaceRestore() {
 // CLEANED FACES HISTORY MANAGEMENT (Database + Persistent Local Cache)
 // =========================================================================
 
+const INITIAL_FACE_CLEAN_HISTORY = [
+  {
+    id: "face_clean_woman_id_01",
+    title: "✨ Woman ID Photo Restoration",
+    prompt: "✨ Woman ID Photo Clean, Reconstruct & HD Brighten",
+    model: "Belzora Neural Face Cleaner HD (CodeFormer)",
+    style: "PhotoReal Clear & Bright",
+    type: "face_restore",
+    aspect_ratio: "382:469",
+    dimensions: "800 × 1000 HD",
+    url: "/static/history_faces/clean_1_woman_id.jpg",
+    reference_url: "/static/history_faces/orig_1_woman_id.jpg",
+    created_at: "2026-11-13 13:01:38",
+    is_upscaled: true
+  },
+  {
+    id: "face_clean_three_friends_02",
+    title: "✨ 3 Friends Full Group Portrait",
+    prompt: "✨ 3 Friends Traditional Shalwar Kameez Portrait • 2048px Crystal Clean HD",
+    model: "Belzora Neural Face Cleaner HD (CodeFormer)",
+    style: "PhotoReal Clear & Bright",
+    type: "face_restore",
+    aspect_ratio: "2048:1052",
+    dimensions: "2048 × 1052 HD",
+    url: "/static/history_faces/clean_2_three_friends.jpg",
+    reference_url: "/static/history_faces/orig_2_three_friends.jpg",
+    created_at: "2026-11-10 16:45:00",
+    is_upscaled: true
+  },
+  {
+    id: "face_clean_center_man_03",
+    title: "✨ Center Man Landmark & Beard Precision",
+    prompt: "✨ Facial Landmark & Beard Precision Neural Restore (2048px Ultra HD)",
+    model: "Belzora Neural Face Cleaner HD (CodeFormer)",
+    style: "PhotoReal Clear & Bright",
+    type: "face_restore",
+    aspect_ratio: "1:1",
+    dimensions: "1024 × 1024 HD",
+    url: "/static/history_faces/clean_3_center_man.jpg",
+    reference_url: "/static/history_faces/orig_3_center_man.jpg",
+    created_at: "2026-11-10 16:15:00",
+    is_upscaled: true
+  },
+  {
+    id: "face_clean_blazer_man_04",
+    title: "✨ Executive Sitting Blazer Portrait",
+    prompt: "✨ Executive Sitting Blazer Portrait • 2048px Crystal Clean HD",
+    model: "Belzora Neural Face Cleaner HD (CodeFormer)",
+    style: "PhotoReal Clear & Bright",
+    type: "face_restore",
+    aspect_ratio: "600:504",
+    dimensions: "600 × 504 HD",
+    url: "/static/history_faces/clean_4_blazer_man.jpg",
+    reference_url: "/static/history_faces/orig_4_blazer_man.jpg",
+    created_at: "2026-11-11 18:05:00",
+    is_upscaled: true
+  },
+  {
+    id: "face_clean_left_man_05",
+    title: "✨ Blue Shalwar Kameez Portrait Detail",
+    prompt: "✨ Blue Shalwar Kameez Portrait Restoration (2048px HD)",
+    model: "Belzora Neural Face Cleaner HD (CodeFormer)",
+    style: "PhotoReal Clear & Bright",
+    type: "face_restore",
+    aspect_ratio: "1:1",
+    dimensions: "1024 × 1024 HD",
+    url: "/static/history_faces/clean_5_left_man.jpg",
+    reference_url: "/static/history_faces/orig_5_left_man.jpg",
+    created_at: "2026-11-10 16:10:00",
+    is_upscaled: true
+  },
+  {
+    id: "face_clean_right_man_06",
+    title: "✨ Black Coat Portrait Detail",
+    prompt: "✨ Executive Black Coat Portrait Restoration (2048px HD)",
+    model: "Belzora Neural Face Cleaner HD (CodeFormer)",
+    style: "PhotoReal Clear & Bright",
+    type: "face_restore",
+    aspect_ratio: "1:1",
+    dimensions: "1024 × 1024 HD",
+    url: "/static/history_faces/clean_6_right_man.jpg",
+    reference_url: "/static/history_faces/orig_6_right_man.jpg",
+    created_at: "2026-11-10 16:12:00",
+    is_upscaled: true
+  },
+  {
+    id: "face_clean_demo_model_07",
+    title: "✨ Belzora Model Demo Portrait",
+    prompt: "✨ Belzora Model Demo Portrait • 2048px Crystal Clean HD",
+    model: "Belzora Neural Face Cleaner HD (CodeFormer)",
+    style: "PhotoReal Clear & Bright",
+    type: "face_restore",
+    aspect_ratio: "1536:1536",
+    dimensions: "1536 × 1536 HD",
+    url: "/static/history_faces/clean_7_demo_model.jpg",
+    reference_url: "/static/history_faces/orig_7_demo_model.jpg",
+    created_at: "2026-11-09 22:30:00",
+    is_upscaled: true
+  }
+];
+
 function renderFaceCleanHistory() {
   const grid = document.getElementById('face-clean-history-grid');
   const emptyState = document.getElementById('face-clean-history-empty');
@@ -1663,8 +1773,12 @@ function renderFaceCleanHistory() {
   });
 
   const map = new Map();
-  localCache.forEach(item => { if (item && item.id) map.set(item.id, item); });
+  // 1. Seeded historical images from project start
+  INITIAL_FACE_CLEAN_HISTORY.forEach(item => { if (item && item.id) map.set(item.id, item); });
+  // 2. Database items
   backendFaceItems.forEach(item => { if (item && item.id) map.set(item.id, item); });
+  // 3. Client session cache
+  localCache.forEach(item => { if (item && item.id) map.set(item.id, item); });
 
   const faceItems = Array.from(map.values()).sort((a, b) => {
     const tA = new Date(a.created_at || a.timestamp || 0).getTime();
@@ -1737,6 +1851,9 @@ function renderFaceCleanHistory() {
 
 function loadHistoryItemIntoViewer(itemId) {
   let item = (creationsMap || {})[itemId];
+  if (!item && typeof INITIAL_FACE_CLEAN_HISTORY !== 'undefined') {
+    item = INITIAL_FACE_CLEAN_HISTORY.find(x => x.id === itemId);
+  }
   if (!item) {
     try {
       const localCache = JSON.parse(localStorage.getItem('belzora_face_clean_history') || '[]');
