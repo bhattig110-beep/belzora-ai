@@ -568,9 +568,16 @@ function triggerFileUpload() {
   if (fileInput) fileInput.click();
 }
 
-function handleImageUpload(e) {
-  const file = e.target.files[0];
+async function handleImageUpload(e) {
+  let file = e.target.files[0];
   if (!file) return;
+
+  const fileName = (file.name || '').toLowerCase();
+  const fileType = (file.type || '').toLowerCase();
+  const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || fileType.includes('heic') || fileType.includes('heif');
+  if (isHeic) {
+    file = await convertHeicIfNeeded(file);
+  }
 
   const reader = new FileReader();
   reader.onload = async (event) => {
@@ -1327,10 +1334,61 @@ window.addEventListener('scroll', () => {
 // 1-CLICK AI FACE CLEANER, BRIGHTENER & NEURAL RESTORER ENGINE
 // =========================================================================
 
-function loadFaceFile(file, badgeOptions) {
-  if (!file || !file.type.startsWith('image/')) {
-    alert("Please upload a valid image file (JPG, PNG, or WEBP).");
+// Helper to convert iPhone HEIC/HEIF files to JPEG using client-side heic2any
+async function convertHeicIfNeeded(file) {
+  if (!file) return file;
+  const name = (file.name || '').toLowerCase();
+  const type = (file.type || '').toLowerCase();
+  const isHeic = name.endsWith('.heic') || name.endsWith('.heif') || type.includes('heic') || type.includes('heif');
+  if (!isHeic) return file;
+
+  if (typeof heic2any === 'function') {
+    try {
+      const converted = await heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.95
+      });
+      const blob = Array.isArray(converted) ? converted[0] : converted;
+      const baseName = file.name ? file.name.replace(/\.(heic|heif)$/i, ".jpg") : "converted_photo.jpg";
+      return new File([blob], baseName, { type: "image/jpeg" });
+    } catch (e) {
+      console.warn("Client-side heic2any conversion error:", e);
+    }
+  }
+  return file;
+}
+
+async function loadFaceFile(file, badgeOptions) {
+  if (!file) return;
+
+  const fileName = (file.name || '').toLowerCase();
+  const fileType = (file.type || '').toLowerCase();
+  const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || fileType.includes('heic') || fileType.includes('heif');
+  const isValidFormat = isHeic || fileType.startsWith('image/') || /\.(jpg|jpeg|png|webp|jfif|bmp|gif|heic|heif)$/i.test(fileName);
+
+  if (!isValidFormat) {
+    alert("Please upload a valid image file (JPG, PNG, WEBP, or HEIC).");
     return;
+  }
+
+  // If iPhone HEIC photo, show feedback and convert to standard JPEG
+  if (isHeic) {
+    const uploadZone = document.getElementById('face-upload-zone');
+    const previewSection = document.getElementById('face-preview-section');
+    const statusBadge = document.getElementById('face-status-badge');
+    if (uploadZone) uploadZone.classList.add('hidden');
+    if (previewSection) previewSection.classList.remove('hidden');
+    if (statusBadge) {
+      statusBadge.textContent = 'Converting iPhone HEIC...';
+      statusBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 animate-pulse';
+    }
+
+    try {
+      file = await convertHeicIfNeeded(file);
+    } catch (err) {
+      console.warn("HEIC conversion issue:", err);
+    }
   }
 
   const applyFaceDataUrl = (dataUrl) => {
