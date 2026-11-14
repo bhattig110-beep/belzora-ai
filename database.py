@@ -178,41 +178,6 @@ def migrate_from_json():
 
         # Ensure all existing creations belong to the creator (usr_demo_01)
         cursor.execute("UPDATE creations SET user_id = 'usr_demo_01' WHERE user_id = 'demo' OR user_id IS NULL")
-
-        # Seed all historical clean face images from project start into creations table
-        face_seed_file = BASE_DIR / "static" / "history_faces" / "initial_history.json"
-        if face_seed_file.exists():
-            try:
-                with open(face_seed_file, "r", encoding="utf-8") as f:
-                    face_history = json.load(f)
-                    for item in face_history:
-                        cursor.execute("""
-                            INSERT OR REPLACE INTO creations (
-                                id, user_id, type, prompt, aspect_ratio, style, model,
-                                url, reference_url, is_remix, seed, favorite, is_demo,
-                                is_upscaled, dimensions, created_at
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (
-                            item.get("id"),
-                            "usr_demo_01",
-                            item.get("type", "face_restore"),
-                            item.get("prompt", ""),
-                            item.get("aspect_ratio", "1:1"),
-                            item.get("style", "PhotoReal Clear & Bright"),
-                            item.get("model", "Belzora Neural Face Cleaner HD (CodeFormer)"),
-                            item.get("url", ""),
-                            item.get("reference_url"),
-                            0,
-                            None,
-                            0,
-                            0,
-                            1 if item.get("is_upscaled") else 0,
-                            item.get("dimensions", "2048 × 2048 HD"),
-                            item.get("created_at")
-                        ))
-            except Exception as e:
-                print(f"[Migration Warning] Face history seeding: {e}")
-
         conn.commit()
 
 # --- USER OPERATIONS ---
@@ -311,29 +276,35 @@ def save_creation(item: dict) -> dict:
 
 def get_history(user_id: Optional[str] = None, email: Optional[str] = None, limit: int = 100) -> List[dict]:
     """
-    Retrieves creations strictly isolated per user:
-    - Creator (Awais / usr_demo_01 / demo@belzora.ai) or default feed: sees all creator creations.
-    - Other registered users: ONLY see creations matching their specific user_id.
+    Strict User Privacy & History Isolation:
+    - Guests / Unauthenticated visitors: returns [] (empty list). Bakiyon ko kisi aur ka private data nahi dikhana.
+    - Specific Registered Users: returns ONLY creations matching their specific user_id.
+    - Creator (Awais / usr_demo_01 / demo@belzora.ai): returns creator creations ONLY when explicitly signed in as creator.
     """
+    clean_uid = (user_id or "").strip()
+    clean_email = (email or "").strip().lower()
+
+    # If NOT logged in / guest: RETURN EMPTY LIST (Strict Privacy: bakiyon ko data nahi dikhana)
+    if not clean_uid and not clean_email:
+        return []
+
     with get_connection() as conn:
         cursor = conn.cursor()
-        clean_email = (email or "").strip().lower()
-        clean_uid = (user_id or "").strip()
 
-        # If it's a specific other user (not demo, not usr_demo_01, not creator email)
-        if clean_uid and clean_uid not in ["usr_demo_01", "usr_demo_02", "demo"] and clean_email not in ["demo@belzora.ai", "demo@pixora.ai"]:
+        # If creator is logged in
+        if clean_uid in ["usr_demo_01", "usr_demo_02", "demo"] or clean_email in ["demo@belzora.ai", "demo@pixora.ai"]:
+            cursor.execute("""
+                SELECT * FROM creations 
+                WHERE user_id IN ('usr_demo_01', 'usr_demo_02', 'demo')
+                ORDER BY created_at DESC LIMIT ?
+            """, (limit,))
+        else:
+            # Specific registered user: STRICTLY their own creations ONLY
             cursor.execute("""
                 SELECT * FROM creations 
                 WHERE user_id = ?
                 ORDER BY created_at DESC LIMIT ?
             """, (clean_uid, limit))
-        else:
-            # Creator (Awais) or default caller: return creator creations
-            cursor.execute("""
-                SELECT * FROM creations 
-                WHERE user_id IN ('usr_demo_01', 'usr_demo_02', 'demo') OR user_id IS NULL
-                ORDER BY created_at DESC LIMIT ?
-            """, (limit,))
 
         rows = cursor.fetchall()
         return [row_to_creation_dict(r) for r in rows]
