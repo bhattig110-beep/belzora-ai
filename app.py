@@ -680,15 +680,14 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
 
     def run_cf():
         nonlocal cf_debug_info
+        _, handle_file = _load_gradio()
+        Client, _ = _load_gradio()
+
+        # Engine 1: Primary CodeFormer (sczhou/CodeFormer)
         try:
             cf = get_codeformer_client()
-            if not cf:
-                cf_debug_info = "CodeFormer client unavailable"
-                return False
-            _, handle_file = _load_gradio()
-
-            def attempt_predict(client):
-                return client.predict(
+            if cf:
+                res = cf.predict(
                     image=handle_file(str(orig_path)),
                     face_align=True,
                     background_enhance=True,
@@ -697,52 +696,61 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
                     codeformer_fidelity=req.fidelity or 0.6,
                     api_name="/inference"
                 )
-
-            res = None
-            try:
-                res = attempt_predict(cf)
-            except Exception as pred_err:
-                if "ZeroGPU quota" in str(pred_err) or "quota" in str(pred_err).lower():
-                    print("Quota hit on client, trying untokenized fallback...")
-                    Client, _ = _load_gradio()
-                    alt_cf = Client("sczhou/CodeFormer", httpx_kwargs={"timeout": 120.0})
-                    res = attempt_predict(alt_cf)
+                if isinstance(res, (tuple, list)):
+                    out_item = res[0]
                 else:
-                    raise pred_err
+                    out_item = res
+                out_p = out_item["path"] if isinstance(out_item, dict) else str(out_item)
+                if out_p:
+                    if out_p.startswith(("http://", "https://")):
+                        req_out = urllib.request.Request(out_p, headers={"User-Agent": "Mozilla/5.0"})
+                        with urllib.request.urlopen(req_out) as resp, open(str(restored_path), "wb") as f_out:
+                            shutil.copyfileobj(resp, f_out)
+                        cf_debug_info = "CodeFormer sczhou primary neural engine succeeded"
+                        return True
+                    elif os.path.exists(out_p):
+                        shutil.copyfile(out_p, str(restored_path))
+                        cf_debug_info = "CodeFormer sczhou primary neural engine succeeded"
+                        return True
+        except Exception as e_sczhou:
+            cf_debug_info = f"sczhou note: {str(e_sczhou)[:80]}, switching to dedicated CodeFormer engine..."
+            print(cf_debug_info)
 
-            cf_debug_info = f"res_type={type(res).__name__}, res={repr(res)[:200]}"
-            if isinstance(res, (tuple, list)):
-                out_item = res[0]
-            else:
-                out_item = res
+        # Engine 2: Dedicated CodeFormer Neural Model (avans06 CodeFormer.pth - bypasses ZeroGPU quota)
+        try:
+            cf_ded = Client("avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN", httpx_kwargs={"timeout": 120.0})
+            res2 = cf_ded.predict(
+                gallery=[{"image": handle_file(str(orig_path)), "caption": None}],
+                face_restoration="CodeFormer.pth",
+                upscale_model=None,
+                scale=req.upscale or 2,
+                face_detection="retinaface_resnet50",
+                face_detection_threshold=10,
+                face_detection_only_center=False,
+                save_as_png=True,
+                api_name="/inference"
+            )
+            if res2 and isinstance(res2, (tuple, list)) and len(res2) > 0 and isinstance(res2[0], (tuple, list)) and len(res2[0]) > 0:
+                item = res2[0][0]
+                img_val = item.get("image") if isinstance(item, dict) else item
+                if isinstance(img_val, dict):
+                    img_val = img_val.get("path") or img_val.get("url")
+                if img_val:
+                    if str(img_val).startswith(("http://", "https://")):
+                        req_out = urllib.request.Request(img_val, headers={"User-Agent": "Mozilla/5.0"})
+                        with urllib.request.urlopen(req_out) as resp, open(str(restored_path), "wb") as f_out:
+                            shutil.copyfileobj(resp, f_out)
+                        cf_debug_info = "Dedicated CodeFormer.pth neural engine succeeded"
+                        return True
+                    elif os.path.exists(str(img_val)):
+                        shutil.copyfile(str(img_val), str(restored_path))
+                        cf_debug_info = "Dedicated CodeFormer.pth neural engine succeeded"
+                        return True
+        except Exception as e_ded:
+            cf_debug_info = f"dedicated CodeFormer note: {str(e_ded)[:80]}"
+            print(cf_debug_info)
 
-            out_file_path = None
-            if isinstance(out_item, dict):
-                if out_item.get("path") and os.path.exists(out_item["path"]):
-                    out_file_path = out_item["path"]
-                elif out_item.get("url"):
-                    out_file_path = out_item["url"]
-            elif isinstance(out_item, str):
-                out_file_path = out_item
-
-            if out_file_path:
-                if out_file_path.startswith(("http://", "https://")):
-                    req_out = urllib.request.Request(out_file_path, headers={"User-Agent": "Mozilla/5.0"})
-                    with urllib.request.urlopen(req_out) as resp, open(str(restored_path), "wb") as f_out:
-                        shutil.copyfileobj(resp, f_out)
-                    return True
-                elif os.path.exists(out_file_path):
-                    shutil.copyfile(out_file_path, str(restored_path))
-                    return True
-                else:
-                    cf_debug_info += f", path_not_found={out_file_path}"
-            else:
-                cf_debug_info += ", no_out_file_path"
-            return False
-        except Exception as e:
-            cf_debug_info = f"Exception: {type(e).__name__}: {str(e)}"
-            print(f"CodeFormer restore note: {e}, using smart neural fallback...")
-            return False
+        return False
 
     try:
         success_cf = await loop.run_in_executor(None, run_cf)
@@ -779,6 +787,16 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             prev.close()
 
         fin_w, fin_h = im.size
+        # 1-Click Ultra HD (2048px): Ensure crystal clear 2048px resolution
+        if (req.upscale or 2) >= 2 and max(fin_w, fin_h) < 2048:
+            scale_factor = 2048.0 / max(fin_w, fin_h)
+            new_w = round(fin_w * scale_factor)
+            new_h = round(fin_h * scale_factor)
+            prev = im
+            im = prev.resize((new_w, new_h), Image.Resampling.LANCZOS)
+            prev.close()
+            fin_w, fin_h = new_w, new_h
+
         im.save(restored_path, format="PNG")
         im.close()
         im = None
