@@ -959,6 +959,10 @@
           <span>Create Account & Continue (150 Tokens)</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
+              <button type="button" onclick="quickLoginAsAdmin()" class="w-full mt-3 py-2.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer">
+          <i data-lucide="shield-check" class="w-4 h-4 text-purple-600"></i>
+          <span>👑 1-Click Sign In as Admin (Awais Ahmad Bhatti)</span>
+        </button>
       </form>
 
       <!-- LOGIN FORM -->
@@ -1019,7 +1023,7 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-  <script src="/static/js/app.js?v=38.0"></script>
+  <script src="/static/js/app.js?v=41.0"></script>
   <script>
     function toggleMobileSettings() {
       if (typeof currentMode !== 'undefined' && currentMode === 'face') {
