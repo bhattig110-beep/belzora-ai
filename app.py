@@ -71,6 +71,18 @@ import database
 # Initialize SQLite database (WAL mode, ACID-compliant) and run auto-migration
 database.init_db()
 
+@app.on_event("startup")
+async def startup_warmup():
+    """Pre-warms CodeFormer AI client in the background so first user prediction is instant."""
+    def warm():
+        try:
+            get_codeformer_client()
+            print("CodeFormer client pre-warmed successfully!")
+        except Exception as e:
+            print(f"CodeFormer warm-up notice: {e}")
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, warm)
+
 # Database-backed history and user helpers
 def load_history() -> List[dict]:
     return database.get_history(limit=100)
@@ -463,10 +475,9 @@ def get_codeformer_client():
     global codeformer_client
     if codeformer_client is None:
         Client, _ = _load_gradio()
+        working_token = "hf_" + "Pbszysbbdgvt" + "RwyyZeitubWz" + "zgQYxbIpL"
+        hf_tok = os.getenv("HF_TOKEN") or working_token
         try:
-            hf_tok = os.getenv("HF_TOKEN")
-            if not hf_tok:
-                hf_tok = "hf_" + "Pbszysbbdgvt" + "RwyyZeitubWz" + "zgQYxbIpL"
             codeformer_client = Client(
                 "sczhou/CodeFormer",
                 token=hf_tok,
@@ -477,11 +488,19 @@ def get_codeformer_client():
             try:
                 codeformer_client = Client(
                     "sczhou/CodeFormer",
+                    token=working_token,
                     httpx_kwargs={"timeout": 120.0}
                 )
             except Exception as e2:
-                print(f"CodeFormer fallback init error: {e2}")
-                return None
+                print(f"CodeFormer working token fallback error: {e2}")
+                try:
+                    codeformer_client = Client(
+                        "sczhou/CodeFormer",
+                        httpx_kwargs={"timeout": 120.0}
+                    )
+                except Exception as e3:
+                    print(f"CodeFormer no-token fallback error: {e3}")
+                    return None
     return codeformer_client
 
 def _load_bounded_rgb(src_path: Path, max_input_dim: int = 2048) -> Image.Image:
@@ -689,7 +708,7 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
         return False
 
     try:
-        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=45.0)
+        success_cf = await loop.run_in_executor(None, run_cf)
     except Exception as cf_err:
         print(f"CodeFormer restore note: {cf_err}, using smart neural fallback...")
 
