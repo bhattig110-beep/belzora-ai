@@ -682,35 +682,64 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     # 2. Run CodeFormer neural face restorer (Original First Setting)
     loop = asyncio.get_event_loop()
     success_cf = False
+    cf_debug_info = None
 
     def run_cf():
-        cf = get_codeformer_client()
-        if not cf:
-            raise Exception("CodeFormer client unavailable")
-        _, handle_file = _load_gradio()
-        res = cf.predict(
-            image=handle_file(str(orig_path)),
-            face_align=True,
-            background_enhance=True,
-            face_upsample=True,
-            upscale=req.upscale or 2,
-            codeformer_fidelity=req.fidelity or 0.6,
-            api_name="/inference"
-        )
-        if isinstance(res, (tuple, list)):
-            out_item = res[0]
-        else:
-            out_item = res
-        out_p = out_item["path"] if isinstance(out_item, dict) else str(out_item)
-        if out_p and os.path.exists(out_p):
-            shutil.copyfile(out_p, str(restored_path))
-            return True
-        return False
+        nonlocal cf_debug_info
+        try:
+            cf = get_codeformer_client()
+            if not cf:
+                cf_debug_info = "CodeFormer client unavailable"
+                return False
+            _, handle_file = _load_gradio()
+            res = cf.predict(
+                image=handle_file(str(orig_path)),
+                face_align=True,
+                background_enhance=True,
+                face_upsample=True,
+                upscale=req.upscale or 2,
+                codeformer_fidelity=req.fidelity or 0.6,
+                api_name="/inference"
+            )
+            cf_debug_info = f"res_type={type(res).__name__}, res={repr(res)[:200]}"
+            if isinstance(res, (tuple, list)):
+                out_item = res[0]
+            else:
+                out_item = res
+
+            out_file_path = None
+            if isinstance(out_item, dict):
+                if out_item.get("path") and os.path.exists(out_item["path"]):
+                    out_file_path = out_item["path"]
+                elif out_item.get("url"):
+                    out_file_path = out_item["url"]
+            elif isinstance(out_item, str):
+                out_file_path = out_item
+
+            if out_file_path:
+                if out_file_path.startswith(("http://", "https://")):
+                    req_out = urllib.request.Request(out_file_path, headers={"User-Agent": "Mozilla/5.0"})
+                    with urllib.request.urlopen(req_out) as resp, open(str(restored_path), "wb") as f_out:
+                        shutil.copyfileobj(resp, f_out)
+                    return True
+                elif os.path.exists(out_file_path):
+                    shutil.copyfile(out_file_path, str(restored_path))
+                    return True
+                else:
+                    cf_debug_info += f", path_not_found={out_file_path}"
+            else:
+                cf_debug_info += ", no_out_file_path"
+            return False
+        except Exception as e:
+            cf_debug_info = f"Exception: {type(e).__name__}: {str(e)}"
+            print(f"CodeFormer restore note: {e}, using smart neural fallback...")
+            return False
 
     try:
         success_cf = await loop.run_in_executor(None, run_cf)
     except Exception as cf_err:
-        print(f"CodeFormer restore note: {cf_err}, using smart neural fallback...")
+        cf_debug_info = f"Executor error: {cf_err}"
+        print(f"CodeFormer executor note: {cf_err}")
 
     # 3. Fallback or post-enhancement if CodeFormer succeeded or failed
     im = None
@@ -773,6 +802,7 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             "width": fin_w,
             "height": fin_h,
             "neural_restored": bool(success_cf),
+            "cf_debug": cf_debug_info,
             "message": "Face pixels cleaned, brightened and restored to HD successfully!"
         }
     except Exception as e:
