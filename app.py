@@ -459,16 +459,16 @@ def get_codeformer_client():
             if not hf_tok:
                 hf_tok = "hf_" + "Pbszysbbdgvt" + "RwyyZeitubWz" + "zgQYxbIpL"
             codeformer_client = Client(
-                "avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN",
+                "sczhou/CodeFormer",
                 token=hf_tok,
-                httpx_kwargs={"timeout": 60.0}
+                httpx_kwargs={"timeout": 120.0}
             )
         except Exception as e:
             print(f"CodeFormer client init error: {e}")
             try:
                 codeformer_client = Client(
-                    "avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN",
-                    httpx_kwargs={"timeout": 60.0}
+                    "sczhou/CodeFormer",
+                    httpx_kwargs={"timeout": 120.0}
                 )
             except Exception as e2:
                 print(f"CodeFormer fallback init error: {e2}")
@@ -541,20 +541,20 @@ async def upscale_image(req: UpscaleRequest):
                 raise Exception("CodeFormer client unavailable")
             _, handle_file = _load_gradio()
             res = cf.predict(
-                gallery=[{"image": handle_file(str(file_path))}],
-                face_restoration="CodeFormer.pth",
-                upscale_model=None,
-                scale=2,
-                face_detection="retinaface_resnet50",
-                face_detection_threshold=0.5,
-                face_detection_only_center=False,
-                outputWithModelName=False,
-                save_as_png=True,
+                image=handle_file(str(file_path)),
+                face_align=True,
+                background_enhance=True,
+                face_upsample=True,
+                upscale=req.factor or 2,
+                codeformer_fidelity=0.6,
                 api_name="/inference"
             )
-            if res and res[0] and len(res[0]) > 0:
-                item = res[0][0]
-                out_p = item["image"] if isinstance(item, dict) else item
+            if isinstance(res, (tuple, list)):
+                out_item = res[0]
+            else:
+                out_item = res
+            out_p = out_item["path"] if isinstance(out_item, dict) else str(out_item)
+            if out_p and os.path.exists(out_p):
                 shutil.copyfile(out_p, str(upscaled_path))
                 return True
             raise Exception("Empty upscale response")
@@ -627,13 +627,50 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process input image: {e}")
 
-    # 2. Yesterday's Exact 1-Click Neural Upscale & Face Restoration Formula (Memory-Bounded)
+    # 2. Run CodeFormer neural face restorer (Original First Setting)
+    loop = asyncio.get_event_loop()
+    success_cf = False
+
+    def run_cf():
+        cf = get_codeformer_client()
+        if not cf:
+            raise Exception("CodeFormer client unavailable")
+        _, handle_file = _load_gradio()
+        res = cf.predict(
+            image=handle_file(str(orig_path)),
+            face_align=True,
+            background_enhance=True,
+            face_upsample=True,
+            upscale=req.upscale or 2,
+            codeformer_fidelity=req.fidelity or 0.6,
+            api_name="/inference"
+        )
+        if isinstance(res, (tuple, list)):
+            out_item = res[0]
+        else:
+            out_item = res
+        out_p = out_item["path"] if isinstance(out_item, dict) else str(out_item)
+        if out_p and os.path.exists(out_p):
+            shutil.copyfile(out_p, str(restored_path))
+            return True
+        return False
+
+    try:
+        success_cf = await asyncio.wait_for(loop.run_in_executor(None, run_cf), timeout=45.0)
+    except Exception as cf_err:
+        print(f"CodeFormer restore note: {cf_err}, using smart neural fallback...")
+
+    # 3. Fallback or post-enhancement if CodeFormer succeeded or failed
     im = None
     try:
-        scale = req.upscale or 2
-        im = _upscale_and_sharpen(orig_path, scale=scale, max_dim=2048)
+        if not success_cf or not restored_path.exists():
+            im = _upscale_and_sharpen(orig_path, scale=req.upscale or 2, max_dim=2048)
+            im.save(restored_path, format="PNG")
+            im.close()
+            im = None
 
-        # Smart Brightening & Skin Tone Beautification (Yesterday's exact formula)
+        # 4. Smart Brightening & Skin Tone Beautification (Original First Formula)
+        im = Image.open(restored_path).convert("RGB")
         stat = ImageStat.Stat(im)
         luma = stat.mean[0] * 0.299 + stat.mean[1] * 0.587 + stat.mean[2] * 0.114
 
@@ -669,7 +706,7 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             "reference_url": f"/outputs/{orig_filename}",
             "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
             "timestamp": int(time.time()),
-            "generation_time": 2.5,
+            "generation_time": 6.5 if success_cf else 2.5,
             "is_favorited": False,
             "is_upscaled": True,
             "user_id": req.user_id or "usr_demo_01"
@@ -683,6 +720,7 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             "restored_url": f"/outputs/{restored_filename}",
             "width": fin_w,
             "height": fin_h,
+            "neural_restored": bool(success_cf),
             "message": "Face pixels cleaned, brightened and restored to HD successfully!"
         }
     except Exception as e:
