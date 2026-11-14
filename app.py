@@ -624,6 +624,16 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
                 req_dl = urllib.request.Request(req.image_url, headers={"User-Agent": "Mozilla/5.0"})
                 with urllib.request.urlopen(req_dl) as r, open(orig_path, "wb") as out_file:
                     shutil.copyfileobj(r, out_file)
+
+        # If input image is HEIC/HEIF, convert to standard PNG for CodeFormer
+        try:
+            with Image.open(orig_path) as chk_im:
+                if getattr(chk_im, "format", "") in ["HEIF", "HEIC"] or str(orig_path).lower().endswith((".heic", ".heif")):
+                    png_path = orig_path.with_suffix(".png")
+                    chk_im.convert("RGB").save(png_path, format="PNG")
+                    orig_path = png_path
+        except Exception as heic_err:
+            pass
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to process input image: {e}")
 
