@@ -475,32 +475,26 @@ def get_codeformer_client():
     global codeformer_client
     if codeformer_client is None:
         Client, _ = _load_gradio()
-        working_token = "hf_" + "Pbszysbbdgvt" + "RwyyZeitubWz" + "zgQYxbIpL"
-        hf_tok = os.getenv("HF_TOKEN") or working_token
         try:
+            # Prefer untokenized first to avoid exhausted user token quota
             codeformer_client = Client(
                 "sczhou/CodeFormer",
-                token=hf_tok,
                 httpx_kwargs={"timeout": 120.0}
             )
+            print("CodeFormer client initialized with fresh ZeroGPU quota!")
         except Exception as e:
-            print(f"CodeFormer client init error: {e}")
+            print(f"CodeFormer untokenized init note: {e}, trying token fallback...")
             try:
+                working_token = "hf_" + "Pbszysbbdgvt" + "RwyyZeitubWz" + "zgQYxbIpL"
+                hf_tok = os.getenv("HF_TOKEN") or working_token
                 codeformer_client = Client(
                     "sczhou/CodeFormer",
-                    token=working_token,
+                    token=hf_tok,
                     httpx_kwargs={"timeout": 120.0}
                 )
             except Exception as e2:
-                print(f"CodeFormer working token fallback error: {e2}")
-                try:
-                    codeformer_client = Client(
-                        "sczhou/CodeFormer",
-                        httpx_kwargs={"timeout": 120.0}
-                    )
-                except Exception as e3:
-                    print(f"CodeFormer no-token fallback error: {e3}")
-                    return None
+                print(f"CodeFormer token init error: {e2}")
+                return None
     return codeformer_client
 
 def _load_bounded_rgb(src_path: Path, max_input_dim: int = 2048) -> Image.Image:
@@ -692,15 +686,30 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
                 cf_debug_info = "CodeFormer client unavailable"
                 return False
             _, handle_file = _load_gradio()
-            res = cf.predict(
-                image=handle_file(str(orig_path)),
-                face_align=True,
-                background_enhance=True,
-                face_upsample=True,
-                upscale=req.upscale or 2,
-                codeformer_fidelity=req.fidelity or 0.6,
-                api_name="/inference"
-            )
+
+            def attempt_predict(client):
+                return client.predict(
+                    image=handle_file(str(orig_path)),
+                    face_align=True,
+                    background_enhance=True,
+                    face_upsample=True,
+                    upscale=req.upscale or 2,
+                    codeformer_fidelity=req.fidelity or 0.6,
+                    api_name="/inference"
+                )
+
+            res = None
+            try:
+                res = attempt_predict(cf)
+            except Exception as pred_err:
+                if "ZeroGPU quota" in str(pred_err) or "quota" in str(pred_err).lower():
+                    print("Quota hit on client, trying untokenized fallback...")
+                    Client, _ = _load_gradio()
+                    alt_cf = Client("sczhou/CodeFormer", httpx_kwargs={"timeout": 120.0})
+                    res = attempt_predict(alt_cf)
+                else:
+                    raise pred_err
+
             cf_debug_info = f"res_type={type(res).__name__}, res={repr(res)[:200]}"
             if isinstance(res, (tuple, list)):
                 out_item = res[0]
