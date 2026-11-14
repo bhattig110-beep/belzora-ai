@@ -222,7 +222,7 @@
           <span id="img2img-badge" class="hidden text-[9px] font-black px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">ACTIVE</span>
         </div>
         <div onclick="triggerFileUpload()" class="border-2 border-dashed border-slate-300 hover:border-pink-500 rounded-2xl p-4 text-center cursor-pointer transition bg-white group shadow-sm">
-          <input type="file" id="source-file-input" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+          <input type="file" id="source-file-input" class="hidden" accept="image/*,.jpg,.jpeg,.png,.webp,.jfif,.bmp,.heic,.heif" onchange="handleImageUpload(event)">
           <div id="upload-placeholder" class="flex flex-col items-center">
             <i data-lucide="image-plus" class="w-7 h-7 text-slate-400 group-hover:text-pink-500 transition mb-1"></i>
             <p class="text-xs text-slate-700 font-bold">Drop Photo to Remix</p>
@@ -534,7 +534,7 @@
             Click to Upload or Drag & Drop Face Photo
           </h3>
           <p class="text-xs text-slate-500 mb-5 max-w-md mx-auto font-medium">
-            Kisi bhi blurry, pixelated ya dark photo ko yahan upload karein (JPG, PNG, WEBP up to 25MB)
+            Kisi bhi blurry, pixelated, iPhone (HEIC) ya dark photo ko yahan upload karein (JPG, PNG, WEBP, HEIC up to 25MB)
           </p>
           
           <div class="inline-flex items-center space-x-2 text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 rounded-xl shadow-md group-hover:shadow-lg transition">
@@ -1019,7 +1019,7 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-  <script src="/static/js/app.js?v=36.0"></script>
+  <script src="/static/js/app.js?v=37.0"></script>
   <script>
     function toggleMobileSettings() {
       if (typeof currentMode !== 'undefined' && currentMode === 'face') {
