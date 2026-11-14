@@ -14,9 +14,9 @@ from io import BytesIO
 from typing import Optional, List
 from pathlib import Path
 from pydantic import BaseModel
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageStat
@@ -46,6 +46,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_no_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.endswith((".js", ".html", ".css")):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 STATIC_DIR = BASE_DIR / "static"
 OUTPUTS_DIR = BASE_DIR / "outputs"
@@ -592,6 +601,20 @@ async def upscale_image(req: UpscaleRequest):
         raise HTTPException(status_code=500, detail=f"Upscaling failed: {str(e)}")
     finally:
         gc.collect()
+
+@app.post("/api/convert-heic")
+async def convert_heic_endpoint(file: UploadFile = File(...)):
+    """Converts uploaded iPhone HEIC/HEIF file to standard JPEG format."""
+    try:
+        content = await file.read()
+        im = Image.open(BytesIO(content)).convert("RGB")
+        out_buf = BytesIO()
+        im.save(out_buf, format="JPEG", quality=95, optimize=True)
+        out_buf.seek(0)
+        return Response(content=out_buf.getvalue(), media_type="image/jpeg")
+    except Exception as e:
+        print(f"HEIC conversion failed: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to convert HEIC: {e}")
 
 # 2. DEDICATED 1-CLICK AI FACE CLEANER, BRIGHTENER & NEURAL RESTORER
 @app.post("/api/restore-face")
