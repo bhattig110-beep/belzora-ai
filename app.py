@@ -719,7 +719,7 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
             "generation_time": 6.5 if success_cf else 2.5,
             "is_favorited": False,
             "is_upscaled": True,
-            "user_id": req.user_id or "usr_demo_01"
+            "user_id": req.user_id if req.user_id else None
         }
         database.save_creation(creation_data)
 
@@ -803,7 +803,7 @@ async def generate_variations(req: VariationsRequest):
             
             record = {
                 "id": rec_id,
-                "user_id": req.user_id or "usr_demo_01",
+                "user_id": req.user_id if req.user_id else None,
                 "type": "image",
                 "prompt": req.prompt,
                 "aspect_ratio": req.aspect_ratio,
@@ -830,7 +830,7 @@ async def generate_variations(req: VariationsRequest):
                 await loop.run_in_executor(None, run_lightning_var)
                 record = {
                     "id": rec_id,
-                    "user_id": req.user_id or "usr_demo_01",
+                    "user_id": req.user_id if req.user_id else None,
                     "type": "image",
                     "prompt": req.prompt,
                     "aspect_ratio": req.aspect_ratio,
@@ -1001,7 +1001,7 @@ async def generate_image(req: ImageGenRequest):
     if output_url:
         record = {
             "id": record_id,
-            "user_id": req.user_id or "usr_demo_01",
+            "user_id": req.user_id if req.user_id else None,
             "type": "image",
             "prompt": user_p,
             "aspect_ratio": req.aspect_ratio,
@@ -1050,7 +1050,7 @@ async def generate_image(req: ImageGenRequest):
         
         record = {
             "id": record_id,
-            "user_id": req.user_id or "usr_demo_01",
+            "user_id": req.user_id if req.user_id else None,
             "type": "image",
             "prompt": user_p,
             "aspect_ratio": req.aspect_ratio,
