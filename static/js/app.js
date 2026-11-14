@@ -929,37 +929,40 @@ function deleteInspectorItem() {
   deleteCreation(id);
 }
 
-// Fetch creations from backend history (strictly isolated per user)
+// Fetch creations from backend history (strictly isolated per user - Bakiyon ko nahi)
 async function fetchCreations() {
   try {
     const stored = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
-    let historyUrl = '/api/history';
-    if (stored) {
-      try {
-        const u = JSON.parse(stored);
-        const uid = u.id || '';
-        const uemail = u.email || '';
-        historyUrl = `/api/history?user_id=${encodeURIComponent(uid)}&email=${encodeURIComponent(uemail)}`;
-      } catch (e) {}
-    } else {
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      if (isLocal) {
-        historyUrl = '/api/history?user_id=usr_demo_01&email=demo@belzora.ai';
-      }
+    
+    // STRICT PRIVACY: If not logged in, guests see NO private user history!
+    if (!stored) {
+      allCreations = [];
+      creationsMap = {};
+      renderGallery();
+      renderFaceCleanHistory();
+      return;
     }
 
+    let uid = "";
+    let uemail = "";
+    try {
+      const u = JSON.parse(stored);
+      uid = u.id || '';
+      uemail = u.email || '';
+    } catch (e) {}
+
+    if (!uid && !uemail) {
+      allCreations = [];
+      creationsMap = {};
+      renderGallery();
+      renderFaceCleanHistory();
+      return;
+    }
+
+    const historyUrl = `/api/history?user_id=${encodeURIComponent(uid)}&email=${encodeURIComponent(uemail)}`;
     const res = await fetch(historyUrl);
     const data = await res.json();
     allCreations = data.history || [];
-    
-    // Merge all seeded historical clean face photos if not already present
-    if (typeof INITIAL_FACE_CLEAN_HISTORY !== 'undefined' && Array.isArray(INITIAL_FACE_CLEAN_HISTORY)) {
-      INITIAL_FACE_CLEAN_HISTORY.forEach(initItem => {
-        if (!allCreations.some(c => c && c.id === initItem.id)) {
-          allCreations.push(initItem);
-        }
-      });
-    }
 
     creationsMap = {};
     allCreations.forEach(item => {
@@ -1557,9 +1560,9 @@ async function executeFaceRestore() {
 
   try {
     const userStr = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
-    let userId = "usr_demo_01";
+    let userId = null;
     if (userStr) {
-      try { userId = JSON.parse(userStr).id || "usr_demo_01"; } catch(e){}
+      try { userId = JSON.parse(userStr).id || null; } catch(e){}
     }
 
     const payloadStr = JSON.stringify({
@@ -1729,274 +1732,8 @@ function resetFaceRestore() {
 // CLEANED FACES HISTORY MANAGEMENT (Database + Persistent Local Cache)
 // =========================================================================
 
-const INITIAL_FACE_CLEAN_HISTORY = [
-  {
-    "id": "face_clean_woman_id_01",
-    "title": "\u2728 Woman ID Photo Restoration",
-    "prompt": "\u2728 Woman ID Photo Clean, Reconstruct & HD Brighten",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "4:5",
-    "dimensions": "800 \u00d7 1000 HD",
-    "url": "/static/history_faces/clean_01_woman_id.jpg",
-    "reference_url": "/static/history_faces/orig_01_woman_id.jpg",
-    "created_at": "2026-11-13 13:01:38",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_blazer_man_02",
-    "title": "\u2728 Executive Sitting Blazer Portrait",
-    "prompt": "\u2728 Executive Sitting Blazer Portrait \u2022 2048px Crystal Clean HD",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "6:5",
-    "dimensions": "600 \u00d7 504 HD",
-    "url": "/static/history_faces/clean_02_blazer_man.jpg",
-    "reference_url": "/static/history_faces/orig_02_blazer_man.jpg",
-    "created_at": "2026-11-11 18:05:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_three_friends_crystal_03",
-    "title": "\u2728 3 Friends Full Group (Crystal Clean HD)",
-    "prompt": "\u2728 3 Friends Traditional Shalwar Kameez Portrait \u2022 Crystal Clean & Smooth HD",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "16:9",
-    "dimensions": "2048 \u00d7 1152 Ultra HD",
-    "url": "/static/history_faces/clean_03_three_friends_crystal.jpg",
-    "reference_url": "/static/history_faces/orig_03_three_friends.jpg",
-    "created_at": "2026-11-10 17:00:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_three_friends_ultra_04",
-    "title": "\u2728 3 Friends Full Group (Remini Pro Ultra-Sharp)",
-    "prompt": "\u2728 Remini Pro Ultra-Sharp \u2022 Deep Eye & Beard Facial Precision",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "16:9",
-    "dimensions": "2048 \u00d7 1152 Ultra HD",
-    "url": "/static/history_faces/clean_04_three_friends_ultra.jpg",
-    "reference_url": "/static/history_faces/orig_04_three_friends.jpg",
-    "created_at": "2026-11-10 16:55:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_three_friends_yesterday_05",
-    "title": "\u2728 3 Friends First Restored Masterpiece",
-    "prompt": "\u2728 3 Friends Original First Restored Masterpiece \u2022 Warm Natural Tone",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "2:1",
-    "dimensions": "2048 \u00d7 1052 HD",
-    "url": "/static/history_faces/clean_05_three_friends_yesterday.jpg",
-    "reference_url": "/static/history_faces/orig_05_three_friends.jpg",
-    "created_at": "2026-11-09 23:30:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_three_friends_codeformer_06",
-    "title": "\u2728 3 Friends True Aligned Neural Clean",
-    "prompt": "\u2728 CodeFormer True Aligned Multi-Face Reconstruction 2048px",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "16:9",
-    "dimensions": "2048 \u00d7 1152 Ultra HD",
-    "url": "/static/history_faces/clean_06_three_friends_codeformer.jpg",
-    "reference_url": "/static/history_faces/orig_06_three_friends.jpg",
-    "created_at": "2026-11-10 16:40:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_center_man_detail_07",
-    "title": "\u2728 Center Man Beard & Eye Detail",
-    "prompt": "\u2728 Center Man Facial Landmark & Beard Precision Neural Restore",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "1:1",
-    "dimensions": "1024 \u00d7 1024 HD",
-    "url": "/static/history_faces/clean_07_center_man_detail.jpg",
-    "reference_url": "/static/history_faces/orig_07_center_man.jpg",
-    "created_at": "2026-11-10 16:15:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_left_man_detail_08",
-    "title": "\u2728 Left Man Blue Shalwar Kameez Detail",
-    "prompt": "\u2728 Left Man Traditional Shalwar Kameez Portrait Detail Restore",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "1:1",
-    "dimensions": "1024 \u00d7 1024 HD",
-    "url": "/static/history_faces/clean_08_left_man_detail.jpg",
-    "reference_url": "/static/history_faces/orig_08_left_man.jpg",
-    "created_at": "2026-11-10 16:10:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_right_man_detail_09",
-    "title": "\u2728 Right Man Executive Black Coat Detail",
-    "prompt": "\u2728 Right Man Executive Black Coat Portrait Detail Restore",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "1:1",
-    "dimensions": "1024 \u00d7 1024 HD",
-    "url": "/static/history_faces/clean_09_right_man_detail.jpg",
-    "reference_url": "/static/history_faces/orig_09_right_man.jpg",
-    "created_at": "2026-11-10 16:12:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_all_3_faces_zoom_10",
-    "title": "\u2728 All 3 Faces 2.5x Zoom Comparison",
-    "prompt": "\u2728 All 3 Faces 2.5x Close-Up Comparative Neural Inspection",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "16:10",
-    "dimensions": "1640 \u00d7 1040 HD",
-    "url": "/static/history_faces/clean_10_all_3_faces_zoom.jpg",
-    "reference_url": "/static/history_faces/orig_10_all_3_faces_orig.jpg",
-    "created_at": "2026-11-10 16:35:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_three_friends_live_11",
-    "title": "\u2728 3 Friends Live Production Enhanced",
-    "prompt": "\u2728 Belzora AI Live Production 2048px Full Restoration",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "2:1",
-    "dimensions": "2048 \u00d7 1052 HD",
-    "url": "/static/history_faces/clean_11_three_friends_live.jpg",
-    "reference_url": "/static/history_faces/orig_11_three_friends.jpg",
-    "created_at": "2026-11-10 16:30:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_demo_model_12",
-    "title": "\u2728 Belzora Model Demo Portrait",
-    "prompt": "\u2728 Belzora Model Demo Portrait \u2022 2048px Crystal Clean HD",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "1:1",
-    "dimensions": "1536 \u00d7 1536 HD",
-    "url": "/static/history_faces/clean_12_demo_model.jpg",
-    "reference_url": "/static/history_faces/orig_12_demo_model.jpg",
-    "created_at": "2026-11-09 22:30:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_deep_codeformer_13",
-    "title": "\u2728 Neural Deep CodeFormer 2048px Master",
-    "prompt": "\u2728 CodeFormer High-Fidelity Deep Neural Face Restoration",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "1:1",
-    "dimensions": "2048 \u00d7 2048 Ultra HD",
-    "url": "/static/history_faces/clean_13_deep_codeformer.jpg",
-    "reference_url": "/static/history_faces/orig_13_deep_codeformer.jpg",
-    "created_at": "2026-11-10 15:50:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_belzora_pro_14",
-    "title": "\u2728 Belzora Pro Complete Enhanced",
-    "prompt": "\u2728 Belzora Pro Multi-Pass Facial & Background Clarity Master",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "2:1",
-    "dimensions": "2048 \u00d7 1052 HD",
-    "url": "/static/history_faces/clean_14_belzora_pro.jpg",
-    "reference_url": "/static/history_faces/orig_14_belzora_pro.jpg",
-    "created_at": "2026-11-10 15:40:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_pass1_15",
-    "title": "\u2728 Neural Clean Studio Pass 1",
-    "prompt": "\u2728 Neural Cleaner Automatic Eye & Skin Luminance Pass 1",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "2:1",
-    "dimensions": "2048 \u00d7 1052 HD",
-    "url": "/static/history_faces/clean_15_pass1.jpg",
-    "reference_url": "/static/history_faces/orig_15_pass1.jpg",
-    "created_at": "2026-11-10 15:20:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_pass2_16",
-    "title": "\u2728 Neural Clean Studio Pass 2",
-    "prompt": "\u2728 Neural Cleaner Automatic Eye & Skin Luminance Pass 2",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "2:1",
-    "dimensions": "2048 \u00d7 1052 HD",
-    "url": "/static/history_faces/clean_16_pass2.jpg",
-    "reference_url": "/static/history_faces/orig_16_pass2.jpg",
-    "created_at": "2026-11-10 15:25:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_test_studio_17",
-    "title": "\u2728 Studio Complete Enhance 2048px",
-    "prompt": "\u2728 Belzora Neural Studio Complete Dynamic Range Enhance",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "2:1",
-    "dimensions": "2048 \u00d7 1052 HD",
-    "url": "/static/history_faces/clean_17_test_studio.jpg",
-    "reference_url": "/static/history_faces/orig_17_test_studio.jpg",
-    "created_at": "2026-11-10 15:15:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_studio_comparison_18",
-    "title": "\u2728 Studio 3 Faces Facial Grid Comparison",
-    "prompt": "\u2728 3 Faces Neural Grid Inspection & Comparison View",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "6:5",
-    "dimensions": "1720 \u00d7 1440 HD",
-    "url": "/static/history_faces/clean_18_studio_comparison.jpg",
-    "reference_url": "/static/history_faces/orig_18_studio_comparison.jpg",
-    "created_at": "2026-11-10 15:10:00",
-    "is_upscaled": true
-  },
-  {
-    "id": "face_clean_cyberpunk_19",
-    "title": "✨ Cyberpunk Warrior Neural Restoration",
-    "prompt": "✨ Cyberpunk Warrior • 2048px CodeFormer Neural Face Restore",
-    "model": "Belzora Neural Face Cleaner HD (CodeFormer)",
-    "style": "PhotoReal Clear & Bright",
-    "type": "face_restore",
-    "aspect_ratio": "1:1",
-    "dimensions": "2048 × 2048 Ultra HD",
-    "url": "/static/history_faces/clean_19_cyberpunk_face.jpg",
-    "reference_url": "/static/history_faces/orig_19_cyberpunk_face.jpg",
-    "created_at": "2026-11-09 22:15:00",
-    "is_upscaled": true
-  }
-];
+// Initial face clean history removed for strict privacy
+const INITIAL_FACE_CLEAN_HISTORY = [];
 
 function renderFaceCleanHistory() {
   const grid = document.getElementById('face-clean-history-grid');
@@ -2014,12 +1751,14 @@ function renderFaceCleanHistory() {
   });
 
   const map = new Map();
-  // 1. Seeded historical images from project start
-  INITIAL_FACE_CLEAN_HISTORY.forEach(item => { if (item && item.id) map.set(item.id, item); });
-  // 2. Database items
-  backendFaceItems.forEach(item => { if (item && item.id) map.set(item.id, item); });
-  // 3. Client session cache
-  localCache.forEach(item => { if (item && item.id) map.set(item.id, item); });
+  const storedUser = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+  if (storedUser) {
+    // Only show backend database items for this logged in user
+    backendFaceItems.forEach(item => { if (item && item.id) map.set(item.id, item); });
+  } else {
+    // Guest: show only this guest's current browser session creations
+    localCache.forEach(item => { if (item && item.id) map.set(item.id, item); });
+  }
 
   const faceItems = Array.from(map.values()).sort((a, b) => {
     const tA = new Date(a.created_at || a.timestamp || 0).getTime();
