@@ -143,38 +143,44 @@ def migrate_from_json():
                 int(time.time() * 1000)
             ))
 
-        # Migrate History
-        if HISTORY_JSON.exists():
-            try:
-                with open(HISTORY_JSON, "r", encoding="utf-8") as f:
-                    history_data = json.load(f)
-                    for h in history_data:
-                        cursor.execute("""
-                            INSERT OR IGNORE INTO creations (
-                                id, user_id, type, prompt, aspect_ratio, style, model,
-                                url, reference_url, is_remix, seed, favorite, is_demo,
-                                is_upscaled, dimensions, created_at
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (
-                            h.get("id"),
-                            h.get("user_id", "demo"),
-                            h.get("type", "image"),
-                            h.get("prompt", ""),
-                            h.get("aspect_ratio", "1:1"),
-                            h.get("style", "Photorealistic"),
-                            h.get("model", "FLUX.1-schnell"),
-                            h.get("url", ""),
-                            h.get("reference_url"),
-                            1 if h.get("is_remix") else 0,
-                            h.get("seed"),
-                            1 if h.get("favorite") else 0,
-                            1 if h.get("is_demo") else 0,
-                            1 if h.get("is_upscaled") else 0,
-                            h.get("dimensions"),
-                            h.get("created_at")
-                        ))
-            except Exception as e:
-                print(f"[Migration Warning] History JSON migration: {e}")
+        # Migrate History (from static history_faces, root initial_history.json, and history.json)
+        sources_to_migrate = [
+            BASE_DIR / "static" / "history_faces" / "initial_history.json",
+            BASE_DIR / "initial_history.json",
+            HISTORY_JSON
+        ]
+        for src_path in sources_to_migrate:
+            if src_path.exists():
+                try:
+                    with open(src_path, "r", encoding="utf-8") as f:
+                        history_data = json.load(f)
+                        for h in history_data:
+                            cursor.execute("""
+                                INSERT OR REPLACE INTO creations (
+                                    id, user_id, type, prompt, aspect_ratio, style, model,
+                                    url, reference_url, is_remix, seed, favorite, is_demo,
+                                    is_upscaled, dimensions, created_at
+                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """, (
+                                h.get("id"),
+                                h.get("user_id") or "usr_demo_01",
+                                h.get("type", "image"),
+                                h.get("prompt", ""),
+                                h.get("aspect_ratio", "1:1"),
+                                h.get("style", "Photorealistic"),
+                                h.get("model", "FLUX.1-schnell"),
+                                h.get("url", ""),
+                                h.get("reference_url"),
+                                1 if h.get("is_remix") else 0,
+                                h.get("seed"),
+                                1 if h.get("favorite") else 0,
+                                1 if h.get("is_demo") else 0,
+                                1 if h.get("is_upscaled") else 0,
+                                h.get("dimensions"),
+                                h.get("created_at")
+                            ))
+                except Exception as e:
+                    print(f"[Migration Warning] History migration from {src_path}: {e}")
 
         # Ensure all existing creations belong to the creator (usr_demo_01)
         cursor.execute("UPDATE creations SET user_id = 'usr_demo_01' WHERE user_id = 'demo' OR user_id IS NULL")
@@ -274,32 +280,40 @@ def save_creation(item: dict) -> dict:
         conn.commit()
     return item
 
+def is_admin_user(user_id: Optional[str], email: Optional[str]) -> bool:
+    uid = (user_id or "").strip().lower()
+    em = (email or "").strip().lower()
+    admin_ids = {"usr_demo_01", "usr_demo_02", "demo", "admin", "usr_admin", "awais"}
+    admin_emails = {"demo@belzora.ai", "demo@pixora.ai", "admin@belzora.ai"}
+    if uid in admin_ids or em in admin_emails or "admin" in em or "awais" in em or "bhatti" in em:
+        return True
+    return False
+
 def get_history(user_id: Optional[str] = None, email: Optional[str] = None, limit: int = 100) -> List[dict]:
     """
     Strict User Privacy & History Isolation:
-    - Guests / Unauthenticated visitors: returns [] (empty list). Bakiyon ko kisi aur ka private data nahi dikhana.
-    - Specific Registered Users: returns ONLY creations matching their specific user_id.
-    - Creator (Awais / usr_demo_01 / demo@belzora.ai): returns creator creations ONLY when explicitly signed in as creator.
+    - Guests / Unauthenticated visitors: returns [] (Strict Privacy: do not expose private user history).
+    - Registered Users (e.g. signup user): returns ONLY creations matching their specific user_id.
+    - Admin (Awais Ahmad Bhatti / usr_demo_01 / demo@belzora.ai): returns ALL creations (all 19 face clean items + portfolio AI creations).
     """
     clean_uid = (user_id or "").strip()
     clean_email = (email or "").strip().lower()
 
-    # If NOT logged in / guest: RETURN EMPTY LIST (Strict Privacy: bakiyon ko data nahi dikhana)
+    # 1. If NOT logged in / guest: RETURN EMPTY LIST (Strict Privacy: bakiyon ko data nahi dikhana)
     if not clean_uid and not clean_email:
         return []
 
     with get_connection() as conn:
         cursor = conn.cursor()
 
-        # If creator is logged in
-        if clean_uid in ["usr_demo_01", "usr_demo_02", "demo"] or clean_email in ["demo@belzora.ai", "demo@pixora.ai"]:
+        # 2. If Admin / Creator is logged in: SHOW ALL DATA!
+        if is_admin_user(clean_uid, clean_email):
             cursor.execute("""
                 SELECT * FROM creations 
-                WHERE user_id IN ('usr_demo_01', 'usr_demo_02', 'demo')
                 ORDER BY created_at DESC LIMIT ?
             """, (limit,))
         else:
-            # Specific registered user: STRICTLY their own creations ONLY
+            # 3. Specific registered user: STRICTLY their own creations ONLY
             cursor.execute("""
                 SELECT * FROM creations 
                 WHERE user_id = ?
