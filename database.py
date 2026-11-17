@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
@@ -35,6 +36,10 @@ def init_db():
             )
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN last_token_reset TEXT;")
+        except Exception:
+            pass
         
         # 2. Creations / Gallery Table
         cursor.execute("""
@@ -67,6 +72,7 @@ def init_db():
 def row_to_user_dict(row: sqlite3.Row) -> dict:
     if not row:
         return None
+    keys = row.keys() if hasattr(row, "keys") else []
     return {
         "id": row["id"],
         "name": row["name"],
@@ -74,6 +80,7 @@ def row_to_user_dict(row: sqlite3.Row) -> dict:
         "password_hash": row["password_hash"],
         "avatar": row["avatar"],
         "tokens": int(row["tokens"]),
+        "last_token_reset": row["last_token_reset"] if "last_token_reset" in keys else None,
         "created_at": row["created_at"]
     }
 
@@ -186,25 +193,77 @@ def migrate_from_json():
         cursor.execute("UPDATE creations SET user_id = 'usr_demo_01' WHERE user_id = 'demo' OR user_id IS NULL")
         conn.commit()
 
+# --- USER & ADMIN PERMISSIONS ---
+
+def is_admin_user(user_id: Optional[str], email: Optional[str]) -> bool:
+    uid = (user_id or "").strip().lower()
+    em = (email or "").strip().lower()
+    admin_ids = {"usr_demo_01", "usr_demo_02", "demo", "admin", "usr_admin", "awais"}
+    admin_emails = {"demo@belzora.ai", "demo@pixora.ai", "admin@belzora.ai"}
+    if uid in admin_ids or em in admin_emails or "admin" in em or "awais" in em or "bhatti" in em:
+        return True
+    return False
+
+def restore_daily_tokens_if_needed(identifier: str) -> Optional[dict]:
+    """
+    Refills 150 free daily tokens automatically every 24 hours / new calendar day.
+    For Admin (usr_demo_01 / demo@belzora.ai / Awais Ahmad Bhatti), auto-refills to 150 if tokens < 50.
+    """
+    if not identifier:
+        return None
+    ident = identifier.strip().lower()
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM users 
+            WHERE email = ? COLLATE NOCASE OR id = ?
+            LIMIT 1
+        """, (ident, ident))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        
+        user = row_to_user_dict(row)
+        last_reset = user.get("last_token_reset")
+        curr_tokens = user.get("tokens", 0)
+        is_admin = is_admin_user(user.get("id"), user.get("email"))
+
+        should_reset = False
+        if last_reset != today_str:
+            should_reset = True
+        elif is_admin and curr_tokens < 50:
+            should_reset = True
+        elif curr_tokens <= 0:
+            should_reset = True
+
+        if should_reset:
+            cursor.execute("""
+                UPDATE users 
+                SET tokens = 150, last_token_reset = ?
+                WHERE id = ?
+            """, (today_str, user["id"]))
+            conn.commit()
+            user["tokens"] = 150
+            user["last_token_reset"] = today_str
+            user["restored_today"] = True
+        else:
+            user["restored_today"] = False
+
+        return user
+
 # --- USER OPERATIONS ---
 
 def get_user_by_email(email: str) -> Optional[dict]:
     if not email:
         return None
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ? COLLATE NOCASE LIMIT 1", (email.strip().lower(),))
-        row = cursor.fetchone()
-        return row_to_user_dict(row)
+    return restore_daily_tokens_if_needed(email)
 
 def get_user_by_id(user_id: str) -> Optional[dict]:
     if not user_id:
         return None
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = ? LIMIT 1", (user_id,))
-        row = cursor.fetchone()
-        return row_to_user_dict(row)
+    return restore_daily_tokens_if_needed(user_id)
 
 def get_all_users() -> List[dict]:
     with get_connection() as conn:
@@ -279,15 +338,6 @@ def save_creation(item: dict) -> dict:
         ))
         conn.commit()
     return item
-
-def is_admin_user(user_id: Optional[str], email: Optional[str]) -> bool:
-    uid = (user_id or "").strip().lower()
-    em = (email or "").strip().lower()
-    admin_ids = {"usr_demo_01", "usr_demo_02", "demo", "admin", "usr_admin", "awais"}
-    admin_emails = {"demo@belzora.ai", "demo@pixora.ai", "admin@belzora.ai"}
-    if uid in admin_ids or em in admin_emails or "admin" in em or "awais" in em or "bhatti" in em:
-        return True
-    return False
 
 def get_history(user_id: Optional[str] = None, email: Optional[str] = None, limit: int = 100) -> List[dict]:
     """
