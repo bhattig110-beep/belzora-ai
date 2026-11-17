@@ -107,8 +107,13 @@ def sanitize_user(user: dict) -> dict:
         "email": user.get("email"),
         "avatar": user.get("avatar"),
         "tokens": user.get("tokens", 150),
+        "last_token_reset": user.get("last_token_reset"),
         "created_at": user.get("created_at")
     }
+
+class DailyRefreshRequest(BaseModel):
+    email: Optional[str] = None
+    user_id: Optional[str] = None
 
 class SignupRequest(BaseModel):
     name: str
@@ -420,15 +425,28 @@ async def login(req: LoginRequest):
     return {"success": True, "user": sanitize_user(user), "message": f"Welcome back, {user.get('name')}!"}
 
 @app.get("/api/auth/me")
-async def get_current_user(email: Optional[str] = None):
-    if email:
+async def get_current_user(email: Optional[str] = None, user_id: Optional[str] = None):
+    target = email or user_id or "demo@belzora.ai"
+    user = database.restore_daily_tokens_if_needed(target)
+    if not user and email:
         user = database.get_user_by_email(email)
-        if user:
-            return {"user": sanitize_user(user)}
-    users = database.get_all_users()
-    if users:
-        return {"user": sanitize_user(users[0])}
-    return {"user": None}
+    if not user:
+        users = database.get_all_users()
+        user = users[0] if users else None
+    return {"user": sanitize_user(user) if user else None}
+
+@app.post("/api/auth/daily-refresh")
+async def daily_refresh(req: DailyRefreshRequest):
+    target = req.email or req.user_id or "usr_demo_01"
+    user = database.restore_daily_tokens_if_needed(target)
+    if not user:
+        return {"success": True, "tokens": 150, "restored": True, "message": "Tokens refreshed to 150 TK"}
+    return {
+        "success": True,
+        "tokens": user.get("tokens", 150),
+        "restored": user.get("restored_today", True),
+        "message": "Daily 150 free tokens active!"
+    }
 
 @app.post("/api/auth/deduct-token")
 async def deduct_token(req: TokenDeductRequest):
