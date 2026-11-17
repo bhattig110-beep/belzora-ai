@@ -497,7 +497,7 @@ def get_codeformer_client():
             # Prefer untokenized first to avoid exhausted user token quota
             codeformer_client = Client(
                 "sczhou/CodeFormer",
-                httpx_kwargs={"timeout": 120.0}
+                httpx_kwargs={"timeout": 28.0}
             )
             print("CodeFormer client initialized with fresh ZeroGPU quota!")
         except Exception as e:
@@ -508,7 +508,7 @@ def get_codeformer_client():
                 codeformer_client = Client(
                     "sczhou/CodeFormer",
                     token=hf_tok,
-                    httpx_kwargs={"timeout": 120.0}
+                    httpx_kwargs={"timeout": 28.0}
                 )
             except Exception as e2:
                 print(f"CodeFormer token init error: {e2}")
@@ -736,7 +736,7 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
 
         # Engine 2: Dedicated CodeFormer Neural Model (avans06 CodeFormer.pth - bypasses ZeroGPU quota)
         try:
-            cf_ded = Client("avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN", httpx_kwargs={"timeout": 120.0})
+            cf_ded = Client("avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN", httpx_kwargs={"timeout": 28.0})
             res2 = cf_ded.predict(
                 gallery=[{"image": handle_file(str(orig_path)), "caption": None}],
                 face_restoration="CodeFormer.pth",
