@@ -71,18 +71,6 @@ import database
 # Initialize SQLite database (WAL mode, ACID-compliant) and run auto-migration
 database.init_db()
 
-@app.on_event("startup")
-async def startup_warmup():
-    """Pre-warms CodeFormer AI client in the background so first user prediction is instant."""
-    def warm():
-        try:
-            get_codeformer_client()
-            print("CodeFormer client pre-warmed successfully!")
-        except Exception as e:
-            print(f"CodeFormer warm-up notice: {e}")
-    loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, warm)
-
 # Database-backed history and user helpers
 def load_history() -> List[dict]:
     return database.get_history(limit=100)
