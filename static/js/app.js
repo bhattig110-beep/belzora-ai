@@ -94,9 +94,44 @@ function loadUserProfile() {
 
   if (stored) {
     try {
-      const user = JSON.parse(stored);
-      tokenBalance = user.tokens ?? 150;
-      updateTokenDisplay();
+      let user = JSON.parse(stored);
+      const today = new Date().toISOString().split('T')[0];
+      const lastResetDate = localStorage.getItem('belzora_last_token_date') || user.last_token_reset;
+      const isAdmin = (user.id === 'usr_demo_01' || (user.email && (user.email.includes('demo') || user.email.includes('admin') || user.email.includes('awais'))));
+      
+      // Daily restore check: auto-refills 150 tokens on new calendar day OR if Admin has < 50 tokens
+      const needsDailyRestore = (lastResetDate !== today) || (isAdmin && (user.tokens < 50 || tokenBalance < 50));
+
+      if (needsDailyRestore) {
+        tokenBalance = 150;
+        user.tokens = 150;
+        user.last_token_reset = today;
+        localStorage.setItem('belzora_user', JSON.stringify(user));
+        localStorage.setItem('belzora_last_token_date', today);
+        updateTokenDisplay();
+
+        // Notify backend to refresh tokens in SQLite database
+        try {
+          fetch('/api/auth/daily-refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, user_id: user.id })
+          }).then(r => r.json()).then(res => {
+            if (res && res.tokens !== undefined) {
+              tokenBalance = res.tokens;
+              updateTokenDisplay();
+            }
+          }).catch(()=>{});
+        } catch(e){}
+
+        if (typeof showToast === 'function') {
+          showToast("✨ 150 Free Daily Tokens Restored!", "success");
+        }
+      } else {
+        tokenBalance = user.tokens ?? 150;
+        updateTokenDisplay();
+      }
+
       if (avatarImg && user.avatar) avatarImg.src = user.avatar;
       if (logoutBtn) logoutBtn.classList.remove('hidden');
       if (loginBtn) loginBtn.classList.add('hidden');
@@ -1418,12 +1453,6 @@ async function loadFaceFile(file, badgeOptions) {
   const fileName = (file.name || '').toLowerCase();
   const fileType = (file.type || '').toLowerCase();
   const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || fileType.includes('heic') || fileType.includes('heif');
-  const isValidFormat = isHeic || fileType.startsWith('image/') || /\.(jpg|jpeg|png|webp|jfif|bmp|gif|heic|heif)$/i.test(fileName);
-
-  if (!isValidFormat) {
-    alert("Please upload a valid image file (JPG, PNG, WEBP, or HEIC).");
-    return;
-  }
 
   // If iPhone HEIC photo, show feedback and convert to standard JPEG
   if (isHeic) {
@@ -1737,14 +1766,28 @@ async function executeFaceRestore() {
   }
 }
 
-function downloadRestoredFace() {
+async function downloadRestoredFace() {
   if (!restoredFaceUrl) return;
-  const a = document.createElement('a');
-  a.href = restoredFaceUrl;
-  a.download = `belzora_clean_face_hd_${Date.now()}.png`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  try {
+    const res = await fetch(restoredFaceUrl);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `belzora_clean_face_2048px_hd_${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+  } catch (err) {
+    const a = document.createElement('a');
+    a.href = restoredFaceUrl;
+    a.download = `belzora_clean_face_2048px_hd_${Date.now()}.png`;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 }
 
 function resetFaceRestore() {
