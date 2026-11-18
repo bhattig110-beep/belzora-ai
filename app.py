@@ -223,7 +223,7 @@ def get_flux_client(token_str: Optional[str] = None):
             flux_clients[key] = Client(
                 "black-forest-labs/FLUX.1-schnell",
                 token=active_token,
-                httpx_kwargs={"timeout": 120.0}
+                httpx_kwargs={"timeout": 8.0}
             )
         except Exception as e:
             print(f"Gradio FLUX client init error for {key}: {e}")
@@ -239,7 +239,7 @@ def get_flux_dev_client(token_str: Optional[str] = None):
             flux_dev_clients[key] = Client(
                 "black-forest-labs/FLUX.1-dev",
                 token=active_token,
-                httpx_kwargs={"timeout": 180.0}
+                httpx_kwargs={"timeout": 8.0}
             )
         except Exception as e:
             print(f"Gradio FLUX Dev client init error for {key}: {e}")
@@ -253,7 +253,7 @@ def get_lightning_client():
     if lightning_client is None:
         try:
             Client, _ = _load_gradio()
-            lightning_client = Client("AP123/SDXL-Lightning", httpx_kwargs={"timeout": 120.0})
+            lightning_client = Client("AP123/SDXL-Lightning", httpx_kwargs={"timeout": 6.0})
         except Exception as e:
             print(f"SDXL Lightning client init error: {e}")
             return None
@@ -291,7 +291,7 @@ def get_vision_client():
     if vision_client is None:
         try:
             Client, _ = _load_gradio()
-            vision_client = Client("aifeifei798/Image-To-Flux-Prompt", httpx_kwargs={"timeout": 60.0})
+            vision_client = Client("aifeifei798/Image-To-Flux-Prompt", httpx_kwargs={"timeout": 3.5})
         except Exception as e:
             print(f"Vision client init error: {e}")
             return None
@@ -326,11 +326,11 @@ async def home_page():
     home_file = STATIC_DIR / "home.html"
     if home_file.exists():
         with open(home_file, "r", encoding="utf-8") as f:
-            return f.read()
+            return HTMLResponse(content=f.read(), headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():
         with open(index_file, "r", encoding="utf-8") as f:
-            return f.read()
+            return HTMLResponse(content=f.read(), headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
     return "<h1>Belzora AI Studio is loading...</h1>"
 
 @app.get("/studio", response_class=HTMLResponse)
@@ -338,7 +338,7 @@ async def studio_page():
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():
         with open(index_file, "r", encoding="utf-8") as f:
-            return f.read()
+            return HTMLResponse(content=f.read(), headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
     return "<h1>Studio is loading...</h1>"
 
 @app.get("/robots.txt", include_in_schema=False)
@@ -1093,7 +1093,12 @@ async def generate_image(req: ImageGenRequest):
     final_model_name = model_display
     generated_seed = None
 
+    hf_start_time = time.time()
     for eng_name, runner in engines:
+        # Never spend more than 7.5 seconds on HF spaces to ensure we never hit proxy timeout
+        if time.time() - hf_start_time > 7.5:
+            print(f"HF spaces budget exceeded ({time.time() - hf_start_time:.1f}s), failing over directly to High-Speed cluster...")
+            break
         try:
             print(f"Generating image ({eng_name}, Remix={is_remix}) for: '{user_p[:50]}'...")
             output_url, final_model_name, generated_seed = await loop.run_in_executor(None, runner)
@@ -1102,6 +1107,10 @@ async def generate_image(req: ImageGenRequest):
             break
         except Exception as e:
             print(f"{eng_name} error/busy: {e}. Trying next engine...")
+            err_str = str(e).lower()
+            if any(w in err_str for w in ["zerogpu", "exceeded", "quota", "rate limit", "busy"]):
+                print("ZeroGPU quota reached or engine busy, immediately using High-Speed cluster...")
+                break
 
     if output_url:
         record = {
@@ -1123,36 +1132,61 @@ async def generate_image(req: ImageGenRequest):
         save_history(record)
         return record
 
-    # Tier 3: Pollinations with Sanitized Prompt & Retry
+    # Tier 3: High-Speed Generator with Multi-Endpoint Fallback & Remix Context
     try:
         seed = req.seed if (req.seed and req.seed > 0) else random.randint(100000, 99999999)
         sanitized = re.sub(r'[\[\](){}]', '', user_p).strip()
         if not sanitized:
             sanitized = "hyper-detailed masterpiece portrait"
-        short_prompt = f"{sanitized}, {req.style}"
-        encoded_prompt = urllib.parse.quote(short_prompt)
-        target_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?seed={seed}&nologo=true"
-        
+
+        if is_remix and req.image_analysis:
+            sanitized_desc = re.sub(r'[\[\](){}]', '', req.image_analysis[:140]).strip()
+            short_prompt = f"{sanitized}, {sanitized_desc}, {req.style}"
+        else:
+            short_prompt = f"{sanitized}, {req.style}"
+
+        encoded_prompt = urllib.parse.quote(short_prompt[:250])
+        target_urls = [
+            f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&seed={seed}&nologo=true",
+            f"https://pollinations.ai/p/{encoded_prompt}?width={width}&height={height}&seed={seed}&nologo=true",
+            f"https://image.pollinations.ai/prompt/{encoded_prompt}?seed={seed}&nologo=true"
+        ]
+
         fallback_filename = f"{record_id}.jpg"
         fallback_path = OUTPUTS_DIR / fallback_filename
-        
+
         def download_free():
-            for attempt in range(2):
-                try:
-                    req_obj = urllib.request.Request(
-                        target_url,
-                        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-                    )
-                    with urllib.request.urlopen(req_obj, timeout=20) as response:
-                        return response.read()
-                except Exception:
-                    time.sleep(1.0)
-            raise Exception("All download attempts timed out")
+            for target_url in target_urls:
+                for attempt in range(2):
+                    try:
+                        req_obj = urllib.request.Request(
+                            target_url,
+                            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+                        )
+                        with urllib.request.urlopen(req_obj, timeout=10) as response:
+                            content = response.read()
+                            if len(content) > 1000:
+                                return content
+                    except Exception as e:
+                        print(f"Tier 3 attempt failed on {target_url[:50]}: {e}")
+                        time.sleep(0.4)
+            raise Exception("All image generation endpoints are currently busy")
 
         data = await loop.run_in_executor(None, download_free)
         with open(fallback_path, "wb") as f:
             f.write(data)
-        
+
+        # Micro-contrast and clarity refinement
+        try:
+            with Image.open(fallback_path) as im:
+                im = im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=125, threshold=2))
+                contrast = ImageEnhance.Contrast(im)
+                im = contrast.enhance(1.03)
+                im.save(fallback_path, format="JPEG", quality=92)
+        except Exception as filter_err:
+            pass
+
+        final_model_name = "Belzora Vision XL [Photo Remix]" if is_remix else "Belzora Vision XL (1024 HD)"
         record = {
             "id": record_id,
             "user_id": req.user_id if req.user_id else None,
@@ -1160,7 +1194,7 @@ async def generate_image(req: ImageGenRequest):
             "prompt": user_p,
             "aspect_ratio": req.aspect_ratio,
             "style": req.style,
-            "model": "High-Speed AI Generator",
+            "model": final_model_name,
             "url": f"/outputs/{fallback_filename}",
             "reference_url": ref_url,
             "is_remix": is_remix,
@@ -1176,7 +1210,7 @@ async def generate_image(req: ImageGenRequest):
         import traceback
         tb = traceback.format_exc()
         print(f"All image generators failed: {err}\n{tb}")
-        raise HTTPException(status_code=500, detail=f"Generation failed: {str(err)}")
+        raise HTTPException(status_code=500, detail="Generation engine busy, please click Generate again!")
 
 @app.post("/api/generate/video")
 async def generate_video(req: VideoGenRequest):
