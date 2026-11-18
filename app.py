@@ -1173,8 +1173,10 @@ async def generate_image(req: ImageGenRequest):
         return record
 
     except Exception as err:
-        print(f"All image generators failed: {err}")
-        raise HTTPException(status_code=500, detail="Generation engine busy, please click Generate again!")
+        import traceback
+        tb = traceback.format_exc()
+        print(f"All image generators failed: {err}\n{tb}")
+        raise HTTPException(status_code=500, detail=f"Generation failed: {str(err)}")
 
 @app.post("/api/generate/video")
 async def generate_video(req: VideoGenRequest):
