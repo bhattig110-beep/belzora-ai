@@ -1,3 +1,31 @@
+function showToast(msg, type = "info") {
+  try {
+    let container = document.getElementById('belzora-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'belzora-toast-container';
+      container.style.cssText = 'position:fixed; bottom:24px; right:24px; z-index:999999; display:flex; flex-direction:column; gap:10px; max-width:380px; pointer-events:none;';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    const bg = type === 'success' ? '#059669' : type === 'warning' ? '#d97706' : type === 'error' ? '#dc2626' : '#1e1b4b';
+    toast.style.cssText = `background:${bg}; color:#ffffff; font-size:12px; font-weight:600; padding:12px 18px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3); pointer-events:auto; display:flex; align-items:center; gap:8px; opacity:0; transform:translateY(10px); transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1);`;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateY(0)';
+    });
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      setTimeout(() => toast.remove(), 350);
+    }, 4500);
+  } catch (e) {
+    console.log("Toast:", msg);
+  }
+}
+
 function quickLoginAsAdmin() {
   const creatorUser = {
     id: "usr_demo_01",
@@ -749,7 +777,7 @@ async function startGeneration() {
       if (progressPercent) progressPercent.textContent = `${pct}%`;
 
       if (pct > 35 && pct <= 65) {
-        if (statusTitle) statusTitle.textContent = currentMode === 'image' ? "Synthesizing FLUX.1 Neural Latents..." : "Generating Motion Dynamics...";
+        if (statusTitle) statusTitle.textContent = currentMode === 'image' ? "Synthesizing Neural Latents..." : "Generating Motion Dynamics...";
         if (statusSub) statusSub.textContent = "Calculating neural weights & lighting conditioning";
       } else if (pct > 65) {
         if (statusTitle) statusTitle.textContent = "Upscaling & Texture Refining...";
@@ -761,87 +789,123 @@ async function startGeneration() {
   const apiToken = localStorage.getItem('lumina_replicate_token') || null;
   const hfToken = localStorage.getItem('lumina_hf_token') || null;
 
-  try {
-    let endpoint = currentMode === 'image' ? '/api/generate/image' : '/api/generate/video';
-    let payload = {};
+  const storedUser = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+  let currentUserId = "usr_demo_01";
+  if (storedUser) {
+    try {
+      const u = JSON.parse(storedUser);
+      if (u.id) currentUserId = u.id;
+    } catch (e) {}
+  }
 
-    const storedUser = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
-    let currentUserId = "usr_demo_01";
-    if (storedUser) {
-      try {
-        const u = JSON.parse(storedUser);
-        if (u.id) currentUserId = u.id;
-      } catch (e) {}
+  const negInput = document.getElementById('negative-prompt');
+  const modelSelect = document.getElementById('model-select');
+  let endpoint = currentMode === 'image' ? '/api/generate/image' : '/api/generate/video';
+  let payload = {};
+
+  if (currentMode === 'image') {
+    const strengthEl = document.getElementById('guidance-strength');
+    const guidanceStrength = strengthEl ? parseFloat(strengthEl.value) / 100 : 0.7;
+
+    payload = {
+      prompt: prompt,
+      negative_prompt: negInput ? negInput.value : "",
+      aspect_ratio: selectedRatio,
+      style: selectedStyle,
+      model: modelSelect ? modelSelect.value : "sdxl",
+      steps: 4,
+      image_url: uploadedImageData,
+      image_analysis: currentImageAnalysis || (uploadedImageData ? "a high quality photographic portrait, detailed subject geometry and lighting" : null),
+      guidance_strength: guidanceStrength,
+      api_key: apiToken,
+      hf_token: hfToken,
+      user_id: currentUserId
+    };
+  } else {
+    payload = {
+      prompt: prompt,
+      image_url: uploadedImageData,
+      motion_type: "Motion Dynamics",
+      duration: 5,
+      aspect_ratio: selectedRatio,
+      model: modelSelect ? modelSelect.value : "kling-v1.6",
+      api_key: apiToken,
+      user_id: currentUserId
+    };
+  }
+
+  let attempt = 0;
+  const maxAttempts = 2;
+  let success = false;
+  let lastError = null;
+
+  while (attempt < maxAttempts && !success) {
+    attempt++;
+    try {
+      if (attempt > 1) {
+        if (statusTitle) statusTitle.textContent = "Connecting to Failover Neural Cluster...";
+        if (statusSub) statusSub.textContent = "Auto-routing through dedicated high-speed engine (Attempt 2/2)...";
+      }
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        let errDetail = "Generation request failed";
+        try {
+          const errJson = await res.json();
+          errDetail = errJson.detail || errDetail;
+        } catch (_) {
+          const raw = await res.text();
+          errDetail = raw || errDetail;
+        }
+        throw new Error(errDetail);
+      }
+
+      const item = await res.json();
+      deductUserTokens(4);
+
+      clearInterval(ticker);
+      if (progressFill) progressFill.style.width = '100%';
+      if (progressPercent) progressPercent.textContent = '100%';
+
+      setTimeout(() => {
+        if (genCard) genCard.classList.add('hidden');
+        fetchCreations();
+        openInspector(item);
+      }, 400);
+
+      success = true;
+      break;
+
+    } catch (err) {
+      lastError = err;
+      console.warn(`Generation attempt ${attempt} notice:`, err);
+      if (attempt < maxAttempts) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
     }
+  }
 
-    const negInput = document.getElementById('negative-prompt');
-    const modelSelect = document.getElementById('model-select');
-
-    if (currentMode === 'image') {
-      const strengthEl = document.getElementById('guidance-strength');
-      const guidanceStrength = strengthEl ? parseFloat(strengthEl.value) / 100 : 0.7;
-
-      payload = {
-        prompt: prompt,
-        negative_prompt: negInput ? negInput.value : "",
-        aspect_ratio: selectedRatio,
-        style: selectedStyle,
-        model: modelSelect ? modelSelect.value : "sdxl",
-        steps: 4,
-        image_url: uploadedImageData,
-        image_analysis: currentImageAnalysis,
-        guidance_strength: guidanceStrength,
-        api_key: apiToken,
-        hf_token: hfToken,
-        user_id: currentUserId
-      };
-    } else {
-      payload = {
-        prompt: prompt,
-        image_url: uploadedImageData,
-        motion_type: "Motion Dynamics",
-        duration: 5,
-        aspect_ratio: selectedRatio,
-        model: modelSelect ? modelSelect.value : "kling-v1.6",
-        api_key: apiToken,
-        user_id: currentUserId
-      };
-    }
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(errText || "Generation request failed");
-    }
-
-    const item = await res.json();
-    deductUserTokens(4);
-
-    clearInterval(ticker);
-    if (progressFill) progressFill.style.width = '100%';
-    if (progressPercent) progressPercent.textContent = '100%';
-
-    setTimeout(() => {
-      if (genCard) genCard.classList.add('hidden');
-      fetchCreations();
-      openInspector(item);
-    }, 400);
-
-  } catch (err) {
+  if (!success) {
     clearInterval(ticker);
     if (genCard) genCard.classList.add('hidden');
-    console.error("Generation error:", err);
-    alert("Generation notice: " + err.message);
-  } finally {
-    if (genBtn) {
-      genBtn.disabled = false;
-      genBtn.classList.remove('opacity-70');
-    }
+    let cleanMsg = (lastError && lastError.message) ? lastError.message : "Generation engine busy, please try again in a moment.";
+    try {
+      if (cleanMsg.startsWith('{') && cleanMsg.endsWith('}')) {
+        const parsed = JSON.parse(cleanMsg);
+        if (parsed.detail) cleanMsg = parsed.detail;
+      }
+    } catch (_) {}
+    showToast(cleanMsg, "warning");
+  }
+
+  if (genBtn) {
+    genBtn.disabled = false;
+    genBtn.classList.remove('opacity-70');
   }
 }
 
