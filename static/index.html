@@ -92,6 +92,11 @@
           <span class="text-[9px] font-bold mt-0.5">Clean</span>
         </button>
 
+        <button onclick="switchLeonardoTab('magic_edit')" id="nav-magic-btn" title="AI Magic Photo Editor (Commands, Clothes, BG & Face Slim)" class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-indigo-600 hover:bg-indigo-50">
+          <i data-lucide="wand-2" class="w-5 h-5 text-indigo-500"></i>
+          <span class="text-[9px] font-bold mt-0.5">Edit AI</span>
+        </button>
+
         <button onclick="switchLeonardoTab('video')" id="nav-video-btn" title="Motion 2.0 (Video Generation)" class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition text-slate-500 hover:text-slate-900 hover:bg-slate-100">
           <i data-lucide="film" class="w-5 h-5 text-cyan-500"></i>
           <span class="text-[9px] font-bold mt-0.5">Motion</span>
@@ -730,6 +735,299 @@
 
     </div>
 
+    
+    <!-- ============================================================ -->
+    <!-- AI MAGIC PHOTO EDITOR & COMMAND STUDIO (Instruct Image Edit) -->
+    <!-- ============================================================ -->
+    <div id="magic-edit-panel" class="hidden flex-1 overflow-y-auto px-4 sm:px-8 py-6 max-w-6xl mx-auto w-full">
+      
+      <!-- Top Title Header -->
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <div class="flex items-center space-x-2.5 mb-1.5">
+            <span class="px-2.5 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-black text-[10px] tracking-wider uppercase shadow-sm">
+              NEW • AI MAGIC COMMAND STUDIO
+            </span>
+            <span class="text-xs font-bold text-slate-600 flex items-center space-x-1">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-500"></i>
+              <span>Natural Language Photo Retouching</span>
+            </span>
+          </div>
+          <h2 class="font-display font-black text-2xl sm:text-3xl text-slate-900 tracking-tight">
+            AI Magic Photo Editor
+          </h2>
+          <p class="text-slate-600 text-xs sm:text-sm mt-1 max-w-2xl font-medium">
+            Upload any photo and tell the AI what to change in plain English or Roman Urdu: <b>"Background remove kar do"</b>, <b>"Dress ka color royal blue kar do"</b>, <b>"Face slim kar do"</b>, <b>"Add sunglasses"</b>, ya tap any 1-Click quick action below!
+          </p>
+        </div>
+
+        <div class="flex items-center space-x-2 self-start sm:self-center">
+          <button onclick="switchLeonardoTab('face')" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-bold border border-pink-200 transition cursor-pointer">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-500"></i>
+            <span>1-Click Face Cleaner</span>
+          </button>
+          <button onclick="switchLeonardoTab('image')" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold border border-purple-200 transition cursor-pointer">
+            <i data-lucide="image" class="w-3.5 h-3.5 text-purple-600"></i>
+            <span>Image Studio</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Interactive Box -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-xl p-5 sm:p-8 mb-6">
+        
+        <!-- Hidden file input for Magic Editor -->
+        <input type="file" id="magic-file-input" accept="image/*,.jpg,.jpeg,.png,.webp,.jfif,.bmp,.heic,.heif" class="hidden" onchange="handleMagicPhotoSelect(event)">
+
+        <!-- Dropzone / Upload Box (Visible when no image selected) -->
+        <div id="magic-upload-zone" onclick="document.getElementById('magic-file-input').click()" 
+             ondragover="handleMagicDragOver(event)" ondragleave="handleMagicDragLeave(event)" ondrop="handleMagicDrop(event)"
+             class="border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-pink-50/50 hover:bg-indigo-50 rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition group">
+          
+          <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-white shadow-lg shadow-indigo-500/10 border border-indigo-100 flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition">
+            <i data-lucide="wand-2" class="w-10 h-10 text-indigo-500"></i>
+          </div>
+          
+          <h3 class="font-display font-black text-xl text-slate-900 mb-1">
+            Click to Upload or Drag & Drop Photo to Edit
+          </h3>
+          <p class="text-xs text-slate-500 mb-5 max-w-md mx-auto font-medium">
+            Kisi bhi portrait, photo ya selfie ko yahan upload karein (JPG, PNG, WEBP, iPhone HEIC up to 25MB)
+          </p>
+          
+          <div class="inline-flex items-center space-x-2 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-5 py-2.5 rounded-xl shadow-md group-hover:shadow-lg transition">
+            <i data-lucide="image" class="w-4 h-4"></i>
+            <span>Browse Photo From Device</span>
+          </div>
+
+          <div class="mt-5 pt-4 border-t border-indigo-100 flex items-center justify-center">
+            <button type="button" onclick="loadSampleMagicPhoto(event)" class="text-xs font-bold text-indigo-700 hover:text-purple-600 underline flex items-center space-x-1.5 cursor-pointer">
+              <i data-lucide="sparkle" class="w-3.5 h-3.5 text-purple-500"></i>
+              <span>Or click here to test with a Sample Photo</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Editor & Command Center (Visible when image is loaded) -->
+        <div id="magic-editor-section" class="hidden">
+          
+          <!-- Command Input Box with Quick Action Chips -->
+          <div class="mb-6 p-5 rounded-2xl bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 border border-indigo-200">
+            <label class="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2 flex items-center justify-between">
+              <span class="flex items-center space-x-1.5">
+                <i data-lucide="message-square" class="w-4 h-4 text-indigo-600"></i>
+                <span>Type Your AI Command (Roman Urdu ya English):</span>
+              </span>
+              <span class="text-[10px] font-bold text-indigo-600">Supports English & Roman Urdu</span>
+            </label>
+
+            <!-- Text Input & Execute inline -->
+            <div class="relative flex flex-col sm:flex-row gap-2 mb-3">
+              <div class="relative flex-1">
+                <i data-lucide="wand-2" class="w-5 h-5 text-indigo-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="magic-command-input" 
+                       placeholder='e.g. Dress ka color royal blue kar do, Remove background, Face slim kar do, Add sunglasses...'
+                       class="w-full pl-11 pr-4 py-3 bg-white rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-sm font-semibold text-slate-800 placeholder-slate-400 transition">
+              </div>
+              <button onclick="executeMagicEdit()" id="magic-execute-btn" 
+                      class="btn-luminous-generate px-6 py-3 rounded-xl text-sm font-black text-white shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 cursor-pointer transition">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span id="magic-btn-text">Execute Magic Edit</span>
+              </button>
+            </div>
+
+            <!-- Quick Action 1-Click Chips -->
+            <div>
+              <span class="text-[11px] font-bold text-slate-500 block mb-2">⚡ 1-Click Quick Commands (Tap to Apply):</span>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="selectMagicQuickChip('Remove background (Transparent PNG)', 'remove_bg')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>✂️ Remove Background</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Clean white photography studio background', 'bg_replace')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>🏢 Studio Background</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Sunset beach with golden ocean waves background', 'bg_replace')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>🏖️ Sunset Beach</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Luxury penthouse with glass window city skyline background', 'bg_replace')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>🌆 Luxury Penthouse</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Change dress to luxury royal blue suit with tie', 'dress_color')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>🔵 Royal Blue Suit</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Change dress to vibrant crimson red luxury outfit', 'dress_color')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>🔴 Crimson Red Outfit</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Change dress to classic black bespoke tuxedo with bow tie', 'dress_color')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>🤵 Black Tuxedo</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Change dress to opulent royal golden embroidered sherwani', 'dress_color')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>🥻 Golden Sherwani</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Face ko slim aur sharp jawline sculpt kar do', 'face_slim')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>✨ Slim & Sculpt Face</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Add modern black designer sunglasses on face', 'accessories')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>🕶️ Add Sunglasses</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Add warm, confident natural smile on face', 'expression')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>😄 Add Smile</span>
+                </button>
+                <button type="button" onclick="selectMagicQuickChip('Change hairstyle to stylish groomed black curls', 'hair')" class="magic-chip px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-100 border border-slate-200 hover:border-indigo-300 text-xs font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer shadow-sm flex items-center space-x-1.5">
+                  <span>💇 Curly Hair Retouch</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Optional settings line -->
+            <div class="mt-4 pt-3 border-t border-indigo-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="magic-face-lock" checked class="w-4 h-4 text-indigo-600 rounded accent-indigo-600 cursor-pointer">
+                <span class="font-extrabold text-slate-700">Lock Face Likeness (Preserve Identity 100%)</span>
+              </label>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-500">Output Quality:</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-extrabold text-[11px]">2048px Ultra HD</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Side-by-Side Comparison Container -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <!-- Left: Original Image -->
+            <div class="flex flex-col">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                  <span>Source Photo (Input)</span>
+                </span>
+                <button onclick="resetMagicEdit()" class="text-xs font-bold text-rose-500 hover:text-rose-700 transition cursor-pointer">
+                  Change Photo
+                </button>
+              </div>
+              <div class="relative rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center min-h-[300px] max-h-[450px]">
+                <img id="magic-original-img" src="" alt="Source Photo" class="w-full h-full object-contain max-h-[450px]">
+              </div>
+            </div>
+
+            <!-- Right: Magic Result or Progress State -->
+            <div class="flex flex-col">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-black uppercase tracking-wider text-indigo-600 flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
+                  <span>Belzora Magic AI Result</span>
+                </span>
+                <span id="magic-status-badge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  Ready for Command
+                </span>
+              </div>
+
+              <!-- Result Image Box / Placeholder -->
+              <div class="relative rounded-2xl overflow-hidden border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/20 to-purple-50/20 flex items-center justify-center min-h-[300px] max-h-[450px]">
+                
+                <!-- Initial Placeholder before execution -->
+                <div id="magic-result-placeholder" class="text-center p-6 flex flex-col items-center justify-center">
+                  <div class="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-3">
+                    <i data-lucide="wand-2" class="w-7 h-7"></i>
+                  </div>
+                  <h4 class="font-extrabold text-sm text-slate-800 mb-1">Type Instruction & Click Execute</h4>
+                  <p class="text-xs text-slate-500 max-w-xs font-medium">
+                    Select a 1-click action or type your own command (dress color, background, face slim) to transform this photo.
+                  </p>
+                </div>
+
+                <!-- Live Processing View -->
+                <div id="magic-processing-view" class="hidden absolute inset-0 bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center text-white z-20">
+                  <div class="relative w-16 h-16 mb-4">
+                    <div class="absolute inset-0 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+                    <div class="absolute inset-2 rounded-full border-4 border-purple-500/20 border-b-purple-500 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                      <i data-lucide="wand-2" class="w-6 h-6 text-indigo-400 animate-pulse"></i>
+                    </div>
+                  </div>
+                  <h4 id="magic-process-title" class="font-display font-black text-lg text-white mb-1">
+                    Interpreting Command...
+                  </h4>
+                  <p id="magic-process-sub" class="text-xs text-indigo-200 max-w-xs font-medium mb-4">
+                    Synthesizing photo modifications with identity preservation...
+                  </p>
+                  <div class="w-48 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div id="magic-process-bar" class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-300 w-1/3"></div>
+                  </div>
+                </div>
+
+                <!-- Final Restored Result Image -->
+                <img id="magic-result-img" src="" alt="Magic AI Edited Photo" class="hidden w-full h-full object-contain max-h-[450px]">
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200">
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="downloadMagicResult()" id="magic-download-btn" class="hidden inline-flex items-center space-x-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/30 transition cursor-pointer">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span id="magic-download-text">Download 2048px HD</span>
+              </button>
+
+              <button onclick="chainNextMagicEdit()" id="magic-chain-btn" class="hidden inline-flex items-center space-x-2 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer" title="Use this result as input to apply another command!">
+                <i data-lucide="repeat" class="w-4 h-4"></i>
+                <span>Apply Another Command on Result 🔁</span>
+              </button>
+
+              <button onclick="sendMagicToFaceCleaner()" id="magic-clean-shortcut-btn" class="hidden inline-flex items-center space-x-2 px-4 py-3 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200 font-extrabold text-xs transition cursor-pointer">
+                <i data-lucide="sparkles" class="w-4 h-4 text-pink-500"></i>
+                <span>Send to 1-Click Face Cleaner</span>
+              </button>
+            </div>
+
+            <button onclick="resetMagicEdit()" class="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer">
+              Upload Another Photo
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Recent Magic Edits Gallery Section -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-md p-5 sm:p-6">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+              <i data-lucide="wand-2" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm text-slate-900">
+                Recent Magic AI Edits
+              </h3>
+              <p class="text-xs text-slate-500 font-medium">All photos you modified with AI Magic Commands</p>
+            </div>
+          </div>
+          <button onclick="switchLeonardoTab('history')" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold border border-purple-200 transition shadow-sm cursor-pointer">
+            <span>View All History</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- History Grid -->
+        <div id="magic-edit-history-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <!-- Dynamically populated by renderMagicEditHistory() -->
+        </div>
+
+        <!-- Empty state when no magic edits yet -->
+        <div id="magic-edit-history-empty" class="p-8 rounded-3xl bg-slate-50 border border-dashed border-slate-300 text-center flex flex-col items-center justify-center">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mb-2">
+            <i data-lucide="wand-2" class="w-6 h-6"></i>
+          </div>
+          <p class="text-sm font-bold text-slate-800 mb-1">No Magic Edits Yet</p>
+          <p class="text-xs text-slate-500 max-w-sm">Upload a photo above, choose a command (remove background, dress color, face slim) and click Execute. Modified photos will appear here.</p>
+        </div>
+      </div>
+
+    </div>
+
+
     <!-- Single Smart Floating Scroll Button (Side Icon that expands on hover) -->
     <div class="fixed bottom-6 right-8 z-30">
       <button id="smart-scroll-btn" onclick="handleSmartScroll()" title="Scroll Down" class="group flex items-center justify-center p-3 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 text-slate-800 hover:text-purple-600 hover:border-purple-300 shadow-xl transition-all duration-300 hover:shadow-2xl cursor-pointer">
@@ -1008,6 +1306,10 @@
       <i data-lucide="sparkles" class="w-5 h-5 text-pink-500"></i>
       <span class="text-[10px] font-bold mt-0.5">Clean</span>
     </button>
+    <button onclick="switchLeonardoTab('magic_edit')" id="mobile-nav-magic-btn" class="flex flex-col items-center text-slate-600 hover:text-indigo-600 transition">
+      <i data-lucide="wand-2" class="w-5 h-5 text-indigo-500"></i>
+      <span class="text-[10px] font-bold mt-0.5">Edit AI</span>
+    </button>
     <button onclick="switchLeonardoTab('history')" id="mobile-nav-history-btn" class="flex flex-col items-center text-slate-600 hover:text-purple-600 transition">
       <i data-lucide="history" class="w-5 h-5 text-purple-500"></i>
       <span class="text-[10px] font-bold mt-0.5">History</span>
@@ -1023,7 +1325,7 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-  <script src="/static/js/app.js?v=50.0"></script>
+  <script src="/static/js/app.js?v=53.0"></script>
   <script>
     function toggleMobileSettings() {
       if (typeof currentMode !== 'undefined' && currentMode === 'face') {
