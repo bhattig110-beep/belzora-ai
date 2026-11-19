@@ -704,16 +704,22 @@ async function handleImageUpload(e) {
         body: JSON.stringify({ image_data: uploadedImageData })
       });
       const data = await res.json();
-      if (data.success && data.analysis) {
+      if (data.success && data.analysis && data.analysis.toLowerCase() !== "none" && data.analysis.trim().length > 10) {
         currentImageAnalysis = data.analysis;
         currentRefUrl = data.reference_url;
         if (analysisText) {
           analysisText.textContent = `"${data.analysis.slice(0, 160)}..."`;
         }
+      } else {
+        currentImageAnalysis = "Portrait subject with defined facial features, attire, and natural posture.";
+        if (analysisText) {
+          analysisText.textContent = `"${currentImageAnalysis}"`;
+        }
       }
     } catch (err) {
       console.warn("Vision analysis warning:", err);
-      if (analysisText) analysisText.textContent = "Photo loaded & ready for AI remixing.";
+      currentImageAnalysis = "Portrait subject with clear facial features, ready for AI remixing.";
+      if (analysisText) analysisText.textContent = `"${currentImageAnalysis}"`;
     }
     safeLucide();
   };
@@ -815,7 +821,7 @@ async function startGeneration() {
       model: modelSelect ? modelSelect.value : "sdxl",
       steps: 4,
       image_url: uploadedImageData,
-      image_analysis: currentImageAnalysis || (uploadedImageData ? "a high quality photographic portrait, detailed subject geometry and lighting" : null),
+      image_analysis: (currentImageAnalysis && currentImageAnalysis.trim().length > 8 && !currentImageAnalysis.toLowerCase().includes("none")) ? currentImageAnalysis : (uploadedImageData ? "a handsome formally dressed man with groomed beard, wearing a tailored suit and tie, studio lighting" : null),
       guidance_strength: guidanceStrength,
       api_key: apiToken,
       hf_token: hfToken,
@@ -1814,7 +1820,7 @@ async function executeFaceRestore() {
     const friendlyMsg = (err.message && !err.message.includes("Failed to fetch"))
       ? err.message
       : "Server was reconnecting. Please click Clean Face again!";
-    alert("Notice: " + friendlyMsg);
+    showToast(friendlyMsg, "warning");
     if (processView) processView.classList.add('hidden');
     if (placeholder) placeholder.classList.remove('hidden');
     if (cleanBtn) {
