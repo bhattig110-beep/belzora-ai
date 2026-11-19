@@ -2646,12 +2646,23 @@ async function executeMagicEdit() {
   }, 1800);
 
   try {
+    let currentUserId = "usr_demo_01";
+    const storedUser = localStorage.getItem('belzora_user') || localStorage.getItem('pixora_user');
+    if (storedUser) {
+      try {
+        const u = JSON.parse(storedUser);
+        if (u && u.id) currentUserId = u.id;
+      } catch (_) {}
+    }
+
+    const isBase64 = selectedMagicBase64 && selectedMagicBase64.startsWith('data:');
     const payload = {
-      image_base64: selectedMagicBase64,
+      image_base64: isBase64 ? selectedMagicBase64 : null,
+      image_url: isBase64 ? null : selectedMagicBase64,
       command: command,
       action_type: currentMagicActionType,
       preserve_face: faceLock,
-      user_id: currentUserId || 'usr_demo_01'
+      user_id: currentUserId
     };
 
     const res = await fetch('/api/magic-edit', {
