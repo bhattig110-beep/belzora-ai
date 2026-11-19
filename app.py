@@ -708,21 +708,38 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
                     out_item = res
                 out_p = out_item["path"] if isinstance(out_item, dict) else str(out_item)
                 if out_p:
+                    dest_tmp = restored_path.with_suffix(".tmp.png")
                     if out_p.startswith(("http://", "https://")):
                         req_out = urllib.request.Request(out_p, headers={"User-Agent": "Mozilla/5.0"})
-                        with urllib.request.urlopen(req_out) as resp, open(str(restored_path), "wb") as f_out:
+                        with urllib.request.urlopen(req_out) as resp, open(str(dest_tmp), "wb") as f_out:
                             shutil.copyfileobj(resp, f_out)
-                        cf_debug_info = "CodeFormer sczhou primary neural engine succeeded"
-                        return True
                     elif os.path.exists(out_p):
-                        shutil.copyfile(out_p, str(restored_path))
+                        shutil.copyfile(out_p, str(dest_tmp))
+
+                    # Aspect ratio check: verify sczhou did not return a single face square crop if input was rectangular
+                    is_valid = True
+                    try:
+                        with Image.open(orig_path) as orig_chk, Image.open(dest_tmp) as out_chk:
+                            orig_ratio = orig_chk.width / max(1, orig_chk.height)
+                            out_ratio = out_chk.width / max(1, out_chk.height)
+                            if abs(orig_ratio - 1.0) > 0.18 and abs(out_ratio - 1.0) < 0.04:
+                                is_valid = False
+                                print("sczhou returned cropped single face instead of full photo, falling back to multi-face engine...")
+                    except Exception:
+                        pass
+
+                    if is_valid and dest_tmp.exists():
+                        shutil.move(str(dest_tmp), str(restored_path))
                         cf_debug_info = "CodeFormer sczhou primary neural engine succeeded"
                         return True
+                    elif dest_tmp.exists():
+                        try: os.remove(str(dest_tmp))
+                        except Exception: pass
         except Exception as e_sczhou:
             cf_debug_info = f"sczhou note: {str(e_sczhou)[:80]}, switching to dedicated CodeFormer engine..."
             print(cf_debug_info)
 
-        # Engine 2: Dedicated CodeFormer Neural Model (avans06 CodeFormer.pth - bypasses ZeroGPU quota)
+        # Engine 2: Dedicated CodeFormer Neural Model (avans06 CodeFormer.pth - multi-face support)
         try:
             cf_ded = Client("avans06/Image_Face_Upscale_Restoration-GFPGAN-RestoreFormer-CodeFormer-GPEN", httpx_kwargs={"timeout": 28.0})
             res2 = cf_ded.predict(
@@ -737,20 +754,37 @@ async def restore_face_endpoint(req: RestoreFaceRequest):
                 api_name="/inference"
             )
             if res2 and isinstance(res2, (tuple, list)) and len(res2) > 0 and isinstance(res2[0], (tuple, list)) and len(res2[0]) > 0:
-                item = res2[0][0]
-                img_val = item.get("image") if isinstance(item, dict) else item
-                if isinstance(img_val, dict):
-                    img_val = img_val.get("path") or img_val.get("url")
+                gallery = res2[0]
+                full_item = None
+
+                # In avans06 gallery, individual cropped faces and comparisons are appended first (_cropped_faces, _restored_faces, _cmp)
+                # The full composite image with all restored faces pasted back is the complete restored photo!
+                for candidate in reversed(gallery):
+                    cand_val = candidate.get("image") if isinstance(candidate, dict) else candidate
+                    if isinstance(cand_val, dict):
+                        cand_val = cand_val.get("path") or cand_val.get("url")
+                    c_str = str(cand_val).lower()
+                    if "cropped" not in c_str and "restored_faces" not in c_str and "_cmp" not in c_str:
+                        full_item = cand_val
+                        break
+
+                if not full_item:
+                    last_c = gallery[-1]
+                    full_item = last_c.get("image") if isinstance(last_c, dict) else last_c
+                    if isinstance(full_item, dict):
+                        full_item = full_item.get("path") or full_item.get("url")
+
+                img_val = full_item
                 if img_val:
                     if str(img_val).startswith(("http://", "https://")):
                         req_out = urllib.request.Request(img_val, headers={"User-Agent": "Mozilla/5.0"})
                         with urllib.request.urlopen(req_out) as resp, open(str(restored_path), "wb") as f_out:
                             shutil.copyfileobj(resp, f_out)
-                        cf_debug_info = "Dedicated CodeFormer.pth neural engine succeeded"
+                        cf_debug_info = "Dedicated CodeFormer.pth neural engine succeeded (Multi-Face Full Photo)"
                         return True
                     elif os.path.exists(str(img_val)):
                         shutil.copyfile(str(img_val), str(restored_path))
-                        cf_debug_info = "Dedicated CodeFormer.pth neural engine succeeded"
+                        cf_debug_info = "Dedicated CodeFormer.pth neural engine succeeded (Multi-Face Full Photo)"
                         return True
         except Exception as e_ded:
             cf_debug_info = f"dedicated CodeFormer note: {str(e_ded)[:80]}"
