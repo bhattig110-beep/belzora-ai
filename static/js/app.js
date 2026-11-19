@@ -409,8 +409,8 @@ function checkUrlParams() {
     }
   }
   const tabParam = params.get('tab');
-  if (tabParam === 'face' || tabParam === 'video' || tabParam === 'image') {
-    switchLeonardoTab(tabParam);
+  if (tabParam === 'face' || tabParam === 'video' || tabParam === 'image' || tabParam === 'magic_edit' || tabParam === 'magic') {
+    switchLeonardoTab(tabParam === 'magic' ? 'magic_edit' : tabParam);
   }
 }
 
@@ -460,6 +460,7 @@ function switchLeonardoTab(tab) {
   const promptTopBar = document.getElementById('prompt-top-bar');
   const galleryFeed = document.getElementById('leo-gallery-feed');
   const facePanel = document.getElementById('face-restore-panel');
+  const magicPanel = document.getElementById('magic-edit-panel');
   const settingsRail = document.getElementById('leo-settings-rail');
   const backdrop = document.getElementById('mobile-settings-backdrop');
   const railTitle = document.getElementById('rail-title');
@@ -484,6 +485,7 @@ function switchLeonardoTab(tab) {
 
     if (settingsRail) settingsRail.style.display = '';
     if (facePanel) facePanel.classList.add('hidden');
+    if (magicPanel) magicPanel.classList.add('hidden');
     if (galleryFeed) galleryFeed.classList.remove('hidden');
     if (promptTopBar) promptTopBar.classList.remove('hidden');
 
@@ -491,6 +493,32 @@ function switchLeonardoTab(tab) {
     setTimeout(() => {
       if (galleryFeed) galleryFeed.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+    safeLucide();
+    return;
+  }
+
+  const magicBtn = document.getElementById('nav-magic-btn');
+  const mobileMagicBtn = document.getElementById('mobile-nav-magic-btn');
+  if (magicBtn) magicBtn.className = defaultBtnClass;
+  if (mobileMagicBtn) mobileMagicBtn.className = "flex flex-col items-center text-slate-500 hover:text-indigo-600 transition";
+
+  if (tab === 'magic_edit') {
+    if (magicBtn) magicBtn.className = "w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-xs transition relative bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white shadow-md shadow-indigo-500/30";
+    if (mobileMagicBtn) mobileMagicBtn.className = "flex flex-col items-center text-indigo-600 transition";
+
+    if (settingsRail) {
+      settingsRail.style.display = 'none';
+      settingsRail.classList.remove('mobile-open');
+    }
+    if (backdrop) backdrop.classList.remove('active');
+
+    if (magicPanel) magicPanel.classList.remove('hidden');
+    if (facePanel) facePanel.classList.add('hidden');
+    if (galleryFeed) galleryFeed.classList.add('hidden');
+    if (promptTopBar) promptTopBar.classList.add('hidden');
+
+    renderMagicEditHistory();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     safeLucide();
     return;
   }
@@ -506,6 +534,7 @@ function switchLeonardoTab(tab) {
     }
     if (backdrop) backdrop.classList.remove('active');
 
+    if (magicPanel) magicPanel.classList.add('hidden');
     if (facePanel) facePanel.classList.remove('hidden');
     if (galleryFeed) galleryFeed.classList.add('hidden');
     if (promptTopBar) promptTopBar.classList.add('hidden');
@@ -520,6 +549,7 @@ function switchLeonardoTab(tab) {
     if (settingsRail) settingsRail.style.display = '';
 
     if (facePanel) facePanel.classList.add('hidden');
+    if (magicPanel) magicPanel.classList.add('hidden');
     if (galleryFeed) galleryFeed.classList.remove('hidden');
     if (promptTopBar) promptTopBar.classList.remove('hidden');
 
@@ -545,6 +575,7 @@ function switchLeonardoTab(tab) {
     if (settingsRail) settingsRail.style.display = '';
 
     if (facePanel) facePanel.classList.add('hidden');
+    if (magicPanel) magicPanel.classList.add('hidden');
     if (galleryFeed) galleryFeed.classList.remove('hidden');
     if (promptTopBar) promptTopBar.classList.remove('hidden');
 
@@ -2396,4 +2427,469 @@ async function deleteFaceCleanHistoryItem(id, event) {
 
   renderFaceCleanHistory();
   renderGallery();
+}
+
+
+// ========================================================
+// AI MAGIC PHOTO EDITOR (Command-driven image manipulation)
+// ========================================================
+let selectedMagicBase64 = null;
+let magicResultUrl = null;
+let currentMagicActionType = "custom";
+let magicEditHistory = [];
+
+async function loadMagicFile(file, badgeOptions) {
+  if (!file) return;
+
+  const fileName = (file.name || '').toLowerCase();
+  const fileType = (file.type || '').toLowerCase();
+  const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || fileType.includes('heic') || fileType.includes('heif');
+
+  // If iPhone HEIC photo, convert to JPEG
+  if (isHeic) {
+    const statusBadge = document.getElementById('magic-status-badge');
+    if (statusBadge) {
+      statusBadge.textContent = 'Converting iPhone HEIC...';
+      statusBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 animate-pulse';
+    }
+    try {
+      file = await convertHeicIfNeeded(file);
+    } catch (err) {
+      console.warn("HEIC conversion issue:", err);
+    }
+  }
+
+  const applyMagicDataUrl = (dataUrl) => {
+    selectedMagicBase64 = dataUrl;
+    const origImg = document.getElementById('magic-original-img');
+    if (origImg) origImg.src = selectedMagicBase64;
+
+    const uploadZone = document.getElementById('magic-upload-zone');
+    const editorSection = document.getElementById('magic-editor-section');
+    if (uploadZone) uploadZone.classList.add('hidden');
+    if (editorSection) editorSection.classList.remove('hidden');
+
+    const placeholder = document.getElementById('magic-result-placeholder');
+    const processView = document.getElementById('magic-processing-view');
+    const resultImg = document.getElementById('magic-result-img');
+    const downloadBtn = document.getElementById('magic-download-btn');
+    const chainBtn = document.getElementById('magic-chain-btn');
+    const cleanShortcutBtn = document.getElementById('magic-clean-shortcut-btn');
+
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (processView) processView.classList.add('hidden');
+    if (resultImg) resultImg.classList.add('hidden');
+    if (downloadBtn) downloadBtn.classList.add('hidden');
+    if (chainBtn) chainBtn.classList.add('hidden');
+    if (cleanShortcutBtn) cleanShortcutBtn.classList.add('hidden');
+
+    const badge = document.getElementById('magic-status-badge');
+    if (badge) {
+      badge.textContent = (badgeOptions && badgeOptions.text) || 'Ready for Command';
+      badge.className = (badgeOptions && badgeOptions.className) || 'text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600';
+    }
+    safeLucide();
+  };
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const rawDataUrl = e.target.result;
+    const maxEdge = 1800;
+    const img = new Image();
+    img.onload = function() {
+      const longest = Math.max(img.width, img.height);
+      if (longest > maxEdge || file.size > 2000000) {
+        const scale = Math.min(1, maxEdge / (longest || 1));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          applyMagicDataUrl(canvas.toDataURL('image/jpeg', 0.92));
+          return;
+        }
+      }
+      applyMagicDataUrl(rawDataUrl);
+    };
+    img.onerror = function() {
+      applyMagicDataUrl(rawDataUrl);
+    };
+    img.src = rawDataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleMagicPhotoSelect(event) {
+  if (event.target && event.target.files && event.target.files[0]) {
+    loadMagicFile(event.target.files[0]);
+  }
+}
+
+function handleMagicDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('magic-upload-zone');
+  if (zone) zone.classList.add('border-indigo-500', 'bg-indigo-100/50');
+}
+
+function handleMagicDragLeave(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('magic-upload-zone');
+  if (zone) zone.classList.remove('border-indigo-500', 'bg-indigo-100/50');
+}
+
+function handleMagicDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const zone = document.getElementById('magic-upload-zone');
+  if (zone) zone.classList.remove('border-indigo-500', 'bg-indigo-100/50');
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+    loadMagicFile(e.dataTransfer.files[0]);
+  }
+}
+
+function selectMagicQuickChip(chipText, actionType) {
+  currentMagicActionType = actionType || "custom";
+  const cmdInput = document.getElementById('magic-command-input');
+  if (cmdInput) {
+    cmdInput.value = chipText;
+    cmdInput.focus();
+  }
+  // Visual active chip highlight
+  document.querySelectorAll('.magic-chip').forEach(btn => {
+    btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+  });
+  if (window.event && window.event.currentTarget) {
+    const target = window.event.currentTarget;
+    target.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+  }
+}
+
+async function loadSampleMagicPhoto(event) {
+  if (event) event.stopPropagation();
+  try {
+    const res = await fetch('/static/images/sample_face_demo.jpg');
+    const blob = await res.blob();
+    const file = new File([blob], "sample_magic_demo.jpg", { type: "image/jpeg" });
+    loadMagicFile(file, {
+      text: 'Demo Sample Loaded • Choose Command',
+      className: 'text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700'
+    });
+    const cmdInput = document.getElementById('magic-command-input');
+    if (cmdInput && !cmdInput.value) {
+      cmdInput.value = "Dress ka color royal blue suit kar do, add sunglasses";
+    }
+  } catch (err) {
+    console.warn("Failed to load sample magic photo:", err);
+  }
+}
+
+async function executeMagicEdit() {
+  if (!selectedMagicBase64) {
+    showToast("Please upload or drop a photo to edit first!", "warning");
+    return;
+  }
+
+  const cmdInput = document.getElementById('magic-command-input');
+  const command = (cmdInput && cmdInput.value.trim()) || "Enhance subject, high quality photograph";
+
+  const executeBtn = document.getElementById('magic-execute-btn');
+  const btnText = document.getElementById('magic-btn-text');
+  const placeholder = document.getElementById('magic-result-placeholder');
+  const processView = document.getElementById('magic-processing-view');
+  const processTitle = document.getElementById('magic-process-title');
+  const processSub = document.getElementById('magic-process-sub');
+  const progressBar = document.getElementById('magic-process-bar');
+  const statusBadge = document.getElementById('magic-status-badge');
+  const resultImg = document.getElementById('magic-result-img');
+  const downloadBtn = document.getElementById('magic-download-btn');
+  const chainBtn = document.getElementById('magic-chain-btn');
+  const cleanShortcutBtn = document.getElementById('magic-clean-shortcut-btn');
+  const faceLock = document.getElementById('magic-face-lock') ? document.getElementById('magic-face-lock').checked : true;
+
+  // Set processing state
+  if (executeBtn) {
+    executeBtn.disabled = true;
+    executeBtn.classList.add('opacity-75', 'cursor-not-allowed');
+  }
+  if (btnText) btnText.textContent = "Processing Magic Edit...";
+  if (placeholder) placeholder.classList.add('hidden');
+  if (processView) processView.classList.remove('hidden');
+  if (resultImg) resultImg.classList.add('hidden');
+  if (downloadBtn) downloadBtn.classList.add('hidden');
+  if (chainBtn) chainBtn.classList.add('hidden');
+  if (cleanShortcutBtn) cleanShortcutBtn.classList.add('hidden');
+
+  if (statusBadge) {
+    statusBadge.textContent = 'Interpreting Command...';
+    statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 animate-pulse';
+  }
+
+  // Animated progress steps
+  const steps = [
+    { pct: '25%', title: 'Analyzing Subject & Features...', sub: 'Vision AI mapping clothing, composition and facial landmarks...' },
+    { pct: '50%', title: 'Interpreting Command...', sub: `Executing: "${command.slice(0, 45)}..."` },
+    { pct: '75%', title: 'Applying AI Transformation...', sub: 'Synthesizing modifications with identity preservation...' },
+    { pct: '90%', title: 'Polishing 2048px Ultra HD...', sub: 'Refining crystal clarity, acutance and color balance...' }
+  ];
+
+  let stepIdx = 0;
+  const progressInterval = setInterval(() => {
+    if (stepIdx < steps.length) {
+      if (progressBar) progressBar.style.width = steps[stepIdx].pct;
+      if (processTitle) processTitle.textContent = steps[stepIdx].title;
+      if (processSub) processSub.textContent = steps[stepIdx].sub;
+      stepIdx++;
+    }
+  }, 1800);
+
+  try {
+    const payload = {
+      image_base64: selectedMagicBase64,
+      command: command,
+      action_type: currentMagicActionType,
+      preserve_face: faceLock,
+      user_id: currentUserId || 'usr_demo_01'
+    };
+
+    const res = await fetch('/api/magic-edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    clearInterval(progressInterval);
+
+    if (!res.ok) {
+      let errDetail = "Magic edit operation could not be completed";
+      try {
+        const errJson = await res.json();
+        errDetail = errJson.detail || errDetail;
+      } catch (_) {
+        const raw = await res.text();
+        errDetail = raw || errDetail;
+      }
+      throw new Error(errDetail);
+    }
+
+    const data = await res.json();
+    magicResultUrl = data.edited_url;
+
+    if (progressBar) progressBar.style.width = '100%';
+    if (processTitle) processTitle.textContent = 'Magic Edit Complete! ✨';
+    if (processSub) processSub.textContent = '100% Identity preserved in 2048px Ultra HD';
+
+    setTimeout(() => {
+      if (processView) processView.classList.add('hidden');
+      if (resultImg) {
+        resultImg.src = data.edited_url + '?t=' + Date.now();
+        resultImg.classList.remove('hidden');
+      }
+      if (downloadBtn) downloadBtn.classList.remove('hidden');
+      if (chainBtn) chainBtn.classList.remove('hidden');
+      if (cleanShortcutBtn) cleanShortcutBtn.classList.remove('hidden');
+
+      if (executeBtn) {
+        executeBtn.disabled = false;
+        executeBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+      }
+      if (btnText) btnText.textContent = "✨ Execute Magic Edit";
+
+      if (statusBadge) {
+        statusBadge.textContent = '2048px Crystal Clean HD ✨';
+        statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+      }
+
+      showToast(`Magic Edit applied: "${command}"!`, "success");
+
+      // Save to local magic edit history
+      try {
+        const newEntry = {
+          id: data.id,
+          command: command,
+          original_url: data.original_url,
+          edited_url: data.edited_url,
+          created_at: new Date().toLocaleTimeString(),
+          dimensions: `${data.width} × ${data.height}`
+        };
+        magicEditHistory.unshift(newEntry);
+        localStorage.setItem('belzora_magic_edit_history', JSON.stringify(magicEditHistory.slice(0, 30)));
+      } catch (e) {}
+
+      fetchCreations();
+      renderMagicEditHistory();
+      safeLucide();
+    }, 400);
+
+  } catch (err) {
+    clearInterval(progressInterval);
+    console.error("Magic edit error:", err);
+    showToast(err.message || "Could not complete magic edit. Please try again!", "warning");
+    if (processView) processView.classList.add('hidden');
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (executeBtn) {
+      executeBtn.disabled = false;
+      executeBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+    }
+    if (btnText) btnText.textContent = "✨ Try Again";
+    if (statusBadge) {
+      statusBadge.textContent = 'Error';
+      statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-700';
+    }
+    safeLucide();
+  }
+}
+
+// Chain next magic edit (use current result as input for another command!)
+function chainNextMagicEdit() {
+  if (!magicResultUrl) return;
+  selectedMagicBase64 = magicResultUrl;
+  const origImg = document.getElementById('magic-original-img');
+  if (origImg) origImg.src = magicResultUrl;
+
+  const resultImg = document.getElementById('magic-result-img');
+  const placeholder = document.getElementById('magic-result-placeholder');
+  const downloadBtn = document.getElementById('magic-download-btn');
+  const chainBtn = document.getElementById('magic-chain-btn');
+  const cleanShortcutBtn = document.getElementById('magic-clean-shortcut-btn');
+  const statusBadge = document.getElementById('magic-status-badge');
+
+  if (resultImg) resultImg.classList.add('hidden');
+  if (placeholder) placeholder.classList.remove('hidden');
+  if (downloadBtn) downloadBtn.classList.add('hidden');
+  if (chainBtn) chainBtn.classList.add('hidden');
+  if (cleanShortcutBtn) cleanShortcutBtn.classList.add('hidden');
+
+  if (statusBadge) {
+    statusBadge.textContent = 'Input Updated • Ready for Next Command';
+    statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700';
+  }
+
+  const cmdInput = document.getElementById('magic-command-input');
+  if (cmdInput) {
+    cmdInput.value = "";
+    cmdInput.focus();
+  }
+
+  showToast("Result loaded as input! Type your next command.", "info");
+  window.scrollTo({ top: 150, behavior: 'smooth' });
+  safeLucide();
+}
+
+function sendMagicToFaceCleaner() {
+  if (!magicResultUrl) return;
+  switchLeonardoTab('face');
+  selectedFaceBase64 = magicResultUrl;
+  const origImg = document.getElementById('face-original-img');
+  if (origImg) origImg.src = magicResultUrl;
+
+  const uploadZone = document.getElementById('face-upload-zone');
+  const previewSection = document.getElementById('face-preview-section');
+  if (uploadZone) uploadZone.classList.add('hidden');
+  if (previewSection) previewSection.classList.remove('hidden');
+
+  const statusBadge = document.getElementById('face-status-badge');
+  if (statusBadge) {
+    statusBadge.textContent = 'Magic Edit Loaded • Ready to Clean';
+    statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-100 text-pink-700';
+  }
+  showToast("Loaded photo into 1-Click Face Cleaner!", "info");
+}
+
+async function downloadMagicResult() {
+  if (!magicResultUrl) return;
+  try {
+    const res = await fetch(magicResultUrl);
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const isPng = magicResultUrl.toLowerCase().endsWith('.png') || blob.type.includes('png');
+    a.download = `Belzora_MagicEdit_${Date.now()}.${isPng ? 'png' : 'jpg'}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast("Downloaded photo in 2048px HD!", "success");
+  } catch (err) {
+    window.open(magicResultUrl, '_blank');
+  }
+}
+
+function resetMagicEdit() {
+  selectedMagicBase64 = null;
+  magicResultUrl = null;
+  currentMagicActionType = "custom";
+
+  const uploadZone = document.getElementById('magic-upload-zone');
+  const editorSection = document.getElementById('magic-editor-section');
+  const fileInput = document.getElementById('magic-file-input');
+  const cmdInput = document.getElementById('magic-command-input');
+
+  if (fileInput) fileInput.value = '';
+  if (cmdInput) cmdInput.value = '';
+  if (uploadZone) uploadZone.classList.remove('hidden');
+  if (editorSection) editorSection.classList.add('hidden');
+  safeLucide();
+}
+
+function renderMagicEditHistory() {
+  const grid = document.getElementById('magic-edit-history-grid');
+  const empty = document.getElementById('magic-edit-history-empty');
+  if (!grid) return;
+
+  try {
+    const saved = localStorage.getItem('belzora_magic_edit_history');
+    if (saved) magicEditHistory = JSON.parse(saved);
+  } catch (e) {}
+
+  if (!magicEditHistory || magicEditHistory.length === 0) {
+    if (empty) empty.classList.remove('hidden');
+    grid.innerHTML = '';
+    return;
+  }
+
+  if (empty) empty.classList.add('hidden');
+  grid.innerHTML = magicEditHistory.map(item => `
+    <div class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 hover:shadow-xl transition cursor-pointer" onclick="previewMagicHistoryItem('${item.edited_url}', '${encodeURIComponent(item.command || '')}')">
+      <div class="aspect-square w-full overflow-hidden bg-slate-100 flex items-center justify-center">
+        <img src="${item.edited_url}" alt="Magic Edit" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy">
+      </div>
+      <div class="p-2.5 bg-white border-t border-slate-100">
+        <span class="inline-block px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-extrabold text-[9px] mb-1">
+          🪄 ${escapeHtml(item.command ? item.command.slice(0, 22) : 'Magic Edit')}...
+        </span>
+        <div class="flex items-center justify-between text-[10px] text-slate-500 font-bold">
+          <span>${item.dimensions || '2048px HD'}</span>
+          <span>${item.created_at || ''}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  safeLucide();
+}
+
+function previewMagicHistoryItem(url, encodedCmd) {
+  const cmd = decodeURIComponent(encodedCmd || '');
+  magicResultUrl = url;
+  const resultImg = document.getElementById('magic-result-img');
+  const placeholder = document.getElementById('magic-result-placeholder');
+  const downloadBtn = document.getElementById('magic-download-btn');
+  const chainBtn = document.getElementById('magic-chain-btn');
+  const statusBadge = document.getElementById('magic-status-badge');
+
+  if (resultImg) {
+    resultImg.src = url;
+    resultImg.classList.remove('hidden');
+  }
+  if (placeholder) placeholder.classList.add('hidden');
+  if (downloadBtn) downloadBtn.classList.remove('hidden');
+  if (chainBtn) chainBtn.classList.remove('hidden');
+
+  if (statusBadge) {
+    statusBadge.textContent = 'Previewing Edit: ' + (cmd.slice(0, 20) || 'Magic Result');
+    statusBadge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700';
+  }
+
+  window.scrollTo({ top: 150, behavior: 'smooth' });
 }
